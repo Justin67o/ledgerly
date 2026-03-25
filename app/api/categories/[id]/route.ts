@@ -11,23 +11,21 @@ export async function PUT(request: Request,
     console.log("Received data for account update:");
     try{
         const { id } = await params;
-        const account = await prisma.account.update({
+        const category = await prisma.category.update({
         where: { id: id },
         data: {
             ...(data.name && { name: data.name }),
             ...(data.type && { type: data.type }),
-            ...(data.balance !== undefined && { balance: data.balance }),
         }
         });
-        console.log("Updated account:", account);
-        return NextResponse.json({message: 'Account updated successfully', data: account}, {status: 200});
+        console.log("Updated category:", category);
+        return NextResponse.json({message: 'Category updated successfully', data: category}, {status: 200});
     } catch (error) {
-        console.log("Error updating account:", error);
-        return NextResponse.json({message: 'Error updating account, ${error.message}'}, {status: 500});
+        return NextResponse.json({message: 'Error updating category, ${error.message}'}, {status: 500});
     }
 }
-
-// delete one specific existing account by id
+    
+// delete one specific existing transaction by id
 export async function DELETE(
     req: Request,
     {params}: {params: Promise<{id: string}>}
@@ -35,15 +33,14 @@ export async function DELETE(
 
     try{
         const { id } = await params;
-        await prisma.account.delete({
+        await prisma.category.delete({
         where: {id: id},
     });
     
-        return NextResponse.json({message: 'Account deleted successfully'}, {status: 200});
+        return NextResponse.json({message: 'Category deleted successfully'}, {status: 200});
     } catch (error) {
-        return NextResponse.json({message: 'Error deleting account, ${error.message}'}, {status: 500});
+        return NextResponse.json({message: 'Error deleting category, ${error.message}'}, {status: 500});
     }
 
 
 }
-

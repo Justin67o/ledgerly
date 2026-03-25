@@ -11,12 +11,13 @@ model User {
   id          String       @id @default(cuid())
   email       String       @unique
   password    String
-  name        String
+  name        String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   accounts    Account[]
   categories  Category[]
   investments Investment[]
+  budgets     Budget[]
 }
 
 model Account {
@@ -30,6 +31,7 @@ model Account {
   transactions Transaction[]
 }
 
+//TODO: Allow users to toggle recurring or not
 model Transaction {
   id          String   @id @default(cuid())
   amount      Decimal
@@ -38,6 +40,8 @@ model Transaction {
   createdAt   DateTime @default(now())
   accountId   String
   account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model Category {
@@ -47,6 +51,9 @@ model Category {
   createdAt DateTime     @default(now())
   userId    String
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  budgetgoal BudgetGoal[]
+  transactions Transaction[]
 }
 
 model Investment {
@@ -59,6 +66,31 @@ model Investment {
   createdAt     DateTime       @default(now())
   userId        String
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Budget {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month     Int          // 1-12
+  year      Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  goals     BudgetGoal[]
+  
+  @@unique([userId, month, year]) // ensures only one budget per user per month
+}
+
+model BudgetGoal {
+  id         String   @id @default(cuid())
+  budgetId   String
+  budget     Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  goalAmount Decimal
+
+   @@unique([budgetId, categoryId])
 }
 
 enum AccountType {

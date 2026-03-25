@@ -4,7 +4,7 @@ import { prisma } from "./lib/prisma";
 // testAccounts.ts (temporary)
 
 async function testGetAccounts() {
-  const res = await fetch('http://localhost:3000/api/accounts/cmn3b9bvt0004rwvsc166malx');
+  const res = await fetch('http://127.0.0.1:3000/api/accounts/cmn3b9bvt0004rwvsc166malx');
   const data = await res.json();
   console.log('GET /accounts:', data);
 }
@@ -44,6 +44,27 @@ async function testDeleteAccount(){
 //testPostAccount();
 
 
-testGetAccounts();
+// testGetAccounts();
 
-testPutAccount();
+// testPutAccount();
+
+// testDeleteAccount();
+
+
+import bcrypt from "bcrypt";
+
+async function testUser() {
+  const hashedPassword = await bcrypt.hash("password123", 10);
+
+  await prisma.user.create({
+    data: {
+      email: "test@example.com",
+      name: "Test User",
+      password: hashedPassword,
+    },
+  });
+
+  console.log("Test user created with hashed password");
+}
+
+testUser();
