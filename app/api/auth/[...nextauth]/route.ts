@@ -4,7 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
-const handler = NextAuth({
+export const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
@@ -42,7 +42,12 @@ const handler = NextAuth({
       },
     }),
   ],
-  session: { strategy: "jwt" },
-});
+  session: { strategy: "jwt" as const },
+// TODO: add custom sign in page and error handling for failed sign in attempts
+//   pages: {
+//     signIn: "/auth/signin",
+//   },
+};
 
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

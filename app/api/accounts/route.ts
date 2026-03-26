@@ -1,9 +1,12 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-//TODO: add authentication and authorization to ensure users can only access their own accounts
-// get all existing accounts for user
+
 export async function GET() {
+    const session = await getServerSession(authOptions);
+  if (!session) return new Response("Unauthorized", { status: 401 });
     try{
         const accounts = await prisma.account.findMany();
         return NextResponse.json({message: 'Accounts retrieved successfully', data: accounts}, {status: 200});
