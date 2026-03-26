@@ -1,5 +1,4 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
@@ -21,6 +20,8 @@ export async function GET() {
 // create a new account
 export async function POST(request: Request) {
   const data = await request.json();
+  const user = await requireAuthentication();
+  if (!user) return new Response("Unauthorized", { status: 401 });
   console.log("Received data for new account:", data);
   try{
     const account = await prisma.account.create({
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
             name: data.name,
             type: data.type,
             balance: data.balance ?? 0,
-            userId: data.userId
+            userId: user.id
         }
     })
     return NextResponse.json({message: 'Account created successfully', data: account}, {status: 201});

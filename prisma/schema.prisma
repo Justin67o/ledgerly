@@ -40,8 +40,8 @@ model Transaction {
   createdAt   DateTime @default(now())
   accountId   String
   account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model Category {

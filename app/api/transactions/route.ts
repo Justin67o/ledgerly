@@ -1,12 +1,20 @@
+import { getServerSession } from "next-auth";
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { requireAuthentication } from "@/lib/requireAuthentication";
 
 //TODO: add authentication and authorization to ensure users can only access their own accounts
 // get all existing accounts for user
 export async function GET() {
+    const user = await requireAuthentication();
+    if (!user) return new Response("Unauthorized", { status: 401 });
+    
     try{
-        const transactions = await prisma.transaction.findMany();
-        return NextResponse.json({message: 'Transactions retrieved successfully', data: transactions}, {status: 200});
+        const userTransactions = await prisma.transaction.findMany({
+            where: { account: { userId: user.id } },
+            include: { account: true, category: true },
+          });
+        return NextResponse.json({message: 'Transactions retrieved successfully', data: userTransactions}, {status: 200});
     } catch (error) {
         if(error instanceof Error) {
             return NextResponse.json({message: `Error retrieving transactions, ${error.message}`}, {status: 500});
@@ -18,6 +26,22 @@ export async function GET() {
 // create a new transaction
 export async function POST(request: Request) {
   const data = await request.json();
+  const user = await requireAuthentication();
+  if (!user) return new Response("Unauthorized", { status: 401 });
+
+  const account = await prisma.account.findUnique({
+    where: { id: data.accountId },
+  });
+  
+  const category = await prisma.category.findUnique({
+    where: { id: data.categoryId },
+  });
+  if(!category || category.userId !== user.id){
+    return new Response("Invalid category", {status: 400})
+  }
+  if (!account || account.userId !== user.id) {
+    return new Response("Invalid account", { status: 400 });
+  }
   console.log("Received data for new transaction:", data);
   try{
     const transaction = await prisma.transaction.create({
@@ -26,8 +50,8 @@ export async function POST(request: Request) {
             description: data.description,
             date: data.date ?? new Date(),
             createdAt: data.createdAt ?? new Date(),
-            accountId: data.accountId,
-            categoryId: data.categoryId
+            accountId: account.id,
+            categoryId: category.id
         }
     })
     return NextResponse.json({message: 'Transaction created successfully', data: transaction}, {status: 201});
