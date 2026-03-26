@@ -2,13 +2,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-
+import { requireAuthentication } from "@/lib/requireAuthentication";
 
 export async function GET() {
-    const session = await getServerSession(authOptions);
-  if (!session) return new Response("Unauthorized", { status: 401 });
+    const user = await requireAuthentication();
+  if (!user) return new Response("Unauthorized", { status: 401 });
     try{
-        const accounts = await prisma.account.findMany();
+        const accounts = await prisma.account.findMany({
+            where: {userId: user.id}
+        });
         return NextResponse.json({message: 'Accounts retrieved successfully', data: accounts}, {status: 200});
     } catch (error) {
         return NextResponse.json({message: 'Error retrieving accounts, ${error.message}'}, {status: 500});

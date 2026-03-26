@@ -67,4 +67,11 @@ async function testUser() {
   console.log("Test user created with hashed password");
 }
 
-testUser();
+//testUser();
+
+
+async function testAuth(){
+  const res = await fetch("api/accounts");
+  const data = await res.json();
+  console.log(data);
+}
