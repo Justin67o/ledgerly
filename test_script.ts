@@ -71,7 +71,7 @@ async function testUser() {
 
 
 async function testAuth(){
-  const res = await fetch("api/accounts");
+  const res = await fetch("http://localhost:3000/api/accounts");
   const data = await res.json();
   console.log(data);
 }
