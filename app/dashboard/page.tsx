@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import type { Account } from "@/generated/prisma/client";
-
+import { useRouter } from "next/navigation";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
@@ -27,6 +27,8 @@ export default function Dashboard() {
 
   const netWorth = accounts.reduce((sum, a) => sum + parseFloat(a.balance.toString()), 0);
 
+  const router = useRouter();
+  
   useEffect(() => {
     
     const fetchdata = async () => {
@@ -113,6 +115,7 @@ export default function Dashboard() {
               style={{ backgroundColor: "var(--accent)", color: "#000" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
+              onClick={() => router.push("/dashboard/addTransaction")}
             >
               + Add Transaction
             </button>

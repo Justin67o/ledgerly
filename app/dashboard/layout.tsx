@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div>
-            {/* Top Navigation */}
+            {/* Top Navigation DESKTOP ONLY*/}
         <nav
         className="sticky hidden md:block top-0 z-40 border-b px-4 md:px-8"
         style={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border)" }}
@@ -38,9 +38,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </nav>
-{children}
 
+      <div className="fixed md:hidden max-w-5xl mx-auto flex justify-center left-0 right-0 h-14 py-2">
+          {/* Logo - MOBILE*/}
+          <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--accent)" }}>
+            Ledgerly
+          </span>
+        </div>
 
+        {children}
+
+        
  {/* Sticky Bottom Bar — mobile only */}
           <div className="fixed bottom-0 left-0 right-0 md:hidden flex justify-center gap-1 border-t"
             style={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border)" }}>
