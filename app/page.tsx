@@ -1,65 +1,213 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
+import type { Account } from "@/generated/prisma/client";
+
+const NAV_ITEMS = ["Home", "Activity", "Accounts", "Budgets", "Investments"];
+
+const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
+
+
+
+
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
+export default function Dashboard() {
+  const [activeNav, setActiveNav] = useState("Home");
+  const [timeframe, setTimeframe] = useState("1M");
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  const netWorth = accounts.reduce((sum, a) => sum + parseFloat(a.balance.toString()), 0);
+
+  useEffect(() => {
+    
+    const fetchdata = async () => {
+
+      try{
+          const fetchedAccounts = await apiFetch("/api/accounts");
+          setAccounts(fetchedAccounts.data);
+          setIsLoading(false);
+      }
+      catch(error){
+        console.error("Error fetching accounts:", error);
+        setIsLoading(false);
+        return;
+      }
+
+    };
+
+    fetchdata();
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+      
+      {/* Top Navigation */}
+      <nav
+        className="sticky hidden md:block top-0 z-40 border-b px-4 md:px-8"
+        style={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border)" }}
+      >
+        <div className="max-w-5xl mx-auto flex items-center justify-between h-14">
+          {/* Logo */}
+          <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--accent)" }}>
+            Ledgerly
+          </span>
+
+          {/* Nav Items */}
+          <div className="flex items-center gap-1">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item}
+                onClick={() => setActiveNav(item)}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150"
+                style={{
+                  backgroundColor: activeNav === item ? "var(--bg-card)" : "transparent",
+                  color: activeNav === item ? "var(--text-primary)" : "var(--text-secondary)",
+                }}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
+
+        {/* Desktop: two-column layout — graph left, actions right */}
+        <div className="flex flex-col md:flex-row md:gap-8 mb-8">
+
+          {/* Left: Net Worth + Graph + Timeframe */}
+          <div className="flex-1">
+            {/* Net Worth */}
+            <div className="mb-4">
+              <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
+                Net Worth
+              </p>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                {formatCurrency(netWorth)}
+              </h1>
+              <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
+                +$1,240.50 (5.1%) this month
+              </p>
+            </div>
+
+            {/* Graph Placeholder */}
+            <div
+              className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4"
+              style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-1">📈</div>
+                <p className="text-sm">Net worth graph coming soon</p>
+              </div>
+            </div>
+
+            {/* Timeframe Selector */}
+            <div className="flex justify-center">
+                <div
+                  className="inline-flex left-0 right-0 rounded-xl p-1 gap-1"
+                  style={{ backgroundColor: "var(--bg-card)" }}
+                >
+                  {TIMEFRAMES.map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => setTimeframe(tf)}
+                      className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-150"
+                      style={{
+                        backgroundColor: timeframe === tf ? "var(--bg-hover)" : "transparent",
+                        color: timeframe === tf ? "var(--text-primary)" : "var(--text-muted)",
+                      }}
+                    >
+                      {tf}
+                    </button>
+                  ))}
+                </div>
+              </div> 
+            </div>
+
+          {/* Right: Action Buttons — desktop only */}
+          <div className="hidden md:flex flex-col gap-3 w-52 pt-14">
+            <button
+              className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+              style={{ backgroundColor: "var(--accent)", color: "#000" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
+            >
+              + Add Transaction
+            </button>
+            <button
+              className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+              style={{ backgroundColor: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card)")}
+            >
+              + Add Investment
+            </button>
+          </div>
+        </div>
+
+        {/* Account Summary Cards */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold">Accounts</h2>
+            <button className="text-sm transition" style={{ color: "var(--accent)" }}>
+              View all
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {accounts.map((account) => (
+              <div
+                key={account.id}
+                className="p-4 rounded-2xl cursor-pointer transition-all duration-150"
+                style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card)")}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium">{account.name}</span>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}
+                  >
+                    {account.type}
+                  </span>
+                </div>
+                <p className="text-xl font-semibold">{formatCurrency(parseFloat(account.balance.toString()))}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
+
+      {/* Sticky Bottom Bar — mobile only */}
+          <div className="fixed bottom-0 left-0 right-0 md:hidden flex justify-center gap-1 border-t"
+            style={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border)" }}>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item}
+                onClick={() => setActiveNav(item)}
+                className="px-2 py-5 rounded-lg text-xs font-medium transition-all duration-150"
+                style={{
+                  backgroundColor: activeNav === item ? "var(--bg-card)" : "transparent",
+                  color: activeNav === item ? "var(--text-primary)" : "var(--text-secondary)",
+                }}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
     </div>
   );
 }

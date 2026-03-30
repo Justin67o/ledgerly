@@ -66,3 +66,19 @@ export async function DELETE(
 
 }
 
+export async function GET(
+    req: Request,
+    {params}: {params: Promise<{id: string}>})
+{
+    const user = await requireAuthentication();
+    if (!user) return new Response("Unauthorized", { status: 401 });
+    const { id } = await params;
+    const account = await prisma.account.findUnique({
+        where: {id: id },
+    });
+
+    if(!account || account.userId !== user.id){
+        return new Response("Unauthorized", { status: 401 });
+    }
+    return NextResponse.json({data: account}, {status: 200});
+}

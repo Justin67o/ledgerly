@@ -75,3 +75,18 @@ async function testAuth(){
   const data = await res.json();
   console.log(data);
 }
+
+async function testAccountCreation(){
+  const res = await fetch("http://localhost:3000/api/accounts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "Test Checking",
+      type: "CHECKING",
+      balance: 1000,
+      userId: "cmn6dzbbt0000v4vs8rktnp0i"
+    })
+  });
+  const data = await res.json();
+  console.log("POST /accounts:", data);
+}
