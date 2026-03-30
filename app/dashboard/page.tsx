@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import type { Account } from "@/generated/prisma/client";
 
-const NAV_ITEMS = ["Home", "Activity", "Accounts", "Budgets", "Investments"];
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
@@ -21,7 +20,6 @@ function formatCurrency(amount: number) {
 }
 
 export default function Dashboard() {
-  const [activeNav, setActiveNav] = useState("Home");
   const [timeframe, setTimeframe] = useState("1M");
   const [accounts, setAccounts] = useState<Account[]>([]);
 
@@ -52,35 +50,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
       
-      {/* Top Navigation */}
-      <nav
-        className="sticky hidden md:block top-0 z-40 border-b px-4 md:px-8"
-        style={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border)" }}
-      >
-        <div className="max-w-5xl mx-auto flex items-center justify-between h-14">
-          {/* Logo */}
-          <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--accent)" }}>
-            Ledgerly
-          </span>
-
-          {/* Nav Items */}
-          <div className="flex items-center gap-1">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item}
-                onClick={() => setActiveNav(item)}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150"
-                style={{
-                  backgroundColor: activeNav === item ? "var(--bg-card)" : "transparent",
-                  color: activeNav === item ? "var(--text-primary)" : "var(--text-secondary)",
-                }}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
@@ -191,23 +160,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Sticky Bottom Bar — mobile only */}
-          <div className="fixed bottom-0 left-0 right-0 md:hidden flex justify-center gap-1 border-t"
-            style={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border)" }}>
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item}
-                onClick={() => setActiveNav(item)}
-                className="px-2 py-5 rounded-lg text-xs font-medium transition-all duration-150"
-                style={{
-                  backgroundColor: activeNav === item ? "var(--bg-card)" : "transparent",
-                  color: activeNav === item ? "var(--text-primary)" : "var(--text-secondary)",
-                }}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
+     
     </div>
   );
 }

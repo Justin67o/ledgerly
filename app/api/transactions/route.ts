@@ -6,10 +6,12 @@ import { requireAuthentication } from "@/lib/requireAuthentication";
 //TODO: add authentication and authorization to ensure users can only access their own accounts
 // get all existing accounts for user
 export async function GET() {
+  
     const user = await requireAuthentication();
     if (!user) return new Response("Unauthorized", { status: 401 });
     
     try{
+      
         const userTransactions = await prisma.transaction.findMany({
             where: { account: { userId: user.id } },
             include: { account: true, category: true },
@@ -17,6 +19,7 @@ export async function GET() {
         return NextResponse.json({message: 'Transactions retrieved successfully', data: userTransactions}, {status: 200});
     } catch (error) {
         if(error instanceof Error) {
+          console.log("Error retrieving transactions:", error);
             return NextResponse.json({message: `Error retrieving transactions, ${error.message}`}, {status: 500});
         }
     }
