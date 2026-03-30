@@ -58,7 +58,7 @@ export default function Activity(){
                         {transactions.map((tx) => (
                             <div key={tx.id} className="p-4 rounded-2xl flex justify-between" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
                                 <div>
-                                    <p className="font-medium">{tx.description}</p>
+                                    <p className="font-medium text-xl">{tx.description}</p>
                                     <p className="text-sm text-muted-foreground">
                                         {new Date(tx.date).toLocaleDateString()}
                                     </p>

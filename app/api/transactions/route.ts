@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
+import { Prisma } from "@/generated/prisma/client";
 
 //TODO: add authentication and authorization to ensure users can only access their own accounts
 // get all existing accounts for user
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
   const user = await requireAuthentication();
   if (!user) return new Response("Unauthorized", { status: 401 });
 
+   // Find the actual accounts and categories from the data by their ID
   const account = await prisma.account.findUnique({
     where: { id: data.accountId },
   });
@@ -46,17 +48,26 @@ export async function POST(request: Request) {
     return new Response("Invalid account", { status: 400 });
   }
   console.log("Received data for new transaction:", data);
+
+ 
+
+
+console.log("Found account:", account);
+console.log("Found category:", category);
   try{
+    console.log("Creating transaction with account ID:", data.accountId, "and category ID:", data.categoryId);
     const transaction = await prisma.transaction.create({
         data: {
-            amount: data.amount,
-            description: data.description,
-            date: data.date ?? new Date(),
+            amount: new Prisma.Decimal(data.amount),
+            description: data.name,
+            date: data.date ? new Date(data.date) : new Date(),
             createdAt: data.createdAt ?? new Date(),
             accountId: account.id,
             categoryId: category.id
         }
     })
+
+    console.log("Created transaction:", transaction);
     return NextResponse.json({message: 'Transaction created successfully', data: transaction}, {status: 201});
     } catch (error) {
         if(error instanceof Error) {

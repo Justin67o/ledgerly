@@ -39,7 +39,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </nav>
 
-      <div className="fixed md:hidden max-w-5xl mx-auto flex justify-center left-0 right-0 h-14 py-2">
+      <div className="fixed md:hidden max-w-5xl mx-auto flex justify-center left-0 right-0 h-9 py-2"
+            style={{ backgroundColor: "var(--bg-primary)", borderColor: "var(--border)" }}>
           {/* Logo - MOBILE*/}
           <span className="text-lg font-semibold tracking-tight" style={{ color: "var(--accent)" }}>
             Ledgerly
