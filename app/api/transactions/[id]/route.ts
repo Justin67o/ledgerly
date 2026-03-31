@@ -40,7 +40,7 @@ export async function PUT(request: Request,
         where: { id: id },
         data: {
             ...(data.amount && { amount: data.amount }),
-            ...(data.description && { description: data.description }),
+            ...(data.name && { description: data.name }),
             ...(data.date && { date: data.date }),
             ...(data.accountId && { accountId: data.accountId }),
             ...(data.categoryId && { categoryId: data.categoryId }),

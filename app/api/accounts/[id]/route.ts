@@ -71,8 +71,10 @@ export async function GET(
     req: Request,
     {params}: {params: Promise<{id: string}>})
 {
+    console.log("Received request for account with id");
     const user = await requireAuthentication();
     if (!user) return new Response("Unauthorized", { status: 401 });
+    
     const { id } = await params;
     const account = await prisma.account.findUnique({
         where: {id: id },

@@ -16,7 +16,6 @@ export default function editTransaction() {
     const id = params.id; // <-- this is your transaction id
 
     // Controlled inputs
-    const [aiInput, setAiInput] = useState("");
     const [accountId, setAccountId] = useState("");
     const [categoryId, setCategoryId] = useState("");
     const [date, setDate] = useState("");
@@ -37,18 +36,16 @@ export default function editTransaction() {
         
         // Check manual fill status
         const manuallyFilled = accountId && categoryId && date && amount && name;
-        // Check AI fill status
-        const aiFilled = aiInput.trim() !== "";
 
-        // Validation: require either manual or AI input
-        if(!manuallyFilled && !aiFilled){
-            //alert("Please fill out either the AI input or all manual fields.");
+        // Validation: require either manual
+        if(!manuallyFilled){
+            //alert("Please fill out all manual fields.");
             return;
         }
         
         // If there is manual input, use that, if not, use AI input
         // TODO: implement AI parsing logic to extract accountId, categoryId, date, and amount from aiInput
-        const transactionData = manuallyFilled ? { accountId, categoryId, date, amount: parseFloat(amount), name } : { aiInput };
+        const transactionData = { accountId, categoryId, date, amount: parseFloat(amount), name };
 
         try{
             const res = await apiFetch(`/api/transactions/${id}`, {
@@ -56,7 +53,6 @@ export default function editTransaction() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(transactionData)
             });
-                setAiInput("");
                 setAccountId("");
                 setCategoryId("");
                 setDate("");
@@ -74,12 +70,6 @@ export default function editTransaction() {
         const fetchdata = async () => {
     
           try{
-              const fetchedAccounts = await apiFetch("/api/accounts");
-              setAccounts(fetchedAccounts.data);
-
-              const fetchedCategories = await apiFetch("/api/categories");
-              setCategories(fetchedCategories.data);
-
               const transaction = await apiFetch(`/api/transactions/${id}`);
               const { accountId, categoryId, date, amount, description } = transaction.data;
               
@@ -107,27 +97,7 @@ export default function editTransaction() {
                 <div className="p-6 rounded-2xl mt-10" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
                     <form onSubmit={handleSubmit}>
                         <h1 className="text-xl font-semibold mb-4 text-center">Edit Transaction</h1>
-                        {/* AI Input Field */}
-                        <div>
-                            <label htmlFor="aiInput" className="block text-xl font-medium mb-2 text-center">
-                                AI Input:
-                            </label>
-                            <input
-                                id="aiInput"
-                                type="text"
-                                placeholder="Type something..."
-                                value={aiInput}
-                                onChange={(e) => setAiInput(e.target.value)}
-                                className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
                         
-
-                        </div>
-                        <div className="flex items-center my-12">
-                            <hr className="grow border-t border-gray-300" />
-                            <span className="mx-2 text-gray-500 font-medium">OR</span>
-                            <hr className="grow border-t border-gray-300" />
-                        </div>
                         {/* Manual Input Fields */}
                         <div className="mt-6">
                             <p className="block text-xl font-medium mb-2 text-center">
