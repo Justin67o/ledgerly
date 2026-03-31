@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
+import { Prisma } from "@/generated/prisma/client";
 
 export async function GET() {
     const user = await requireAuthentication();
@@ -23,12 +24,18 @@ export async function POST(request: Request) {
   const user = await requireAuthentication();
   if (!user) return new Response("Unauthorized", { status: 401 });
   console.log("Received data for new account:", data);
+
+  if (data.type === "INVESTMENT") {
+    data.amount = 0;
+  }
+
   try{
     const account = await prisma.account.create({
         data: {
             name: data.name,
             type: data.type,
-            balance: data.balance ?? 0,
+            dateCreated: data.date !== "" ? new Date(data.date) : new Date(),
+            balance: new Prisma.Decimal(data.amount || 0),
             userId: user.id
         }
     })

@@ -47,13 +47,10 @@ export async function POST(request: Request) {
   if (!account || account.userId !== user.id) {
     return new Response("Invalid account", { status: 400 });
   }
-  console.log("Received data for new transaction:", data);
+
 
  
 
-
-console.log("Found account:", account);
-console.log("Found category:", category);
   try{
     console.log("Creating transaction with account ID:", data.accountId, "and category ID:", data.categoryId);
     const transaction = await prisma.transaction.create({

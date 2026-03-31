@@ -15,9 +15,9 @@ model User {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   accounts    Account[]
+  budgets     Budget[]
   categories  Category[]
   investments Investment[]
-  budgets     Budget[]
 }
 
 model Account {
@@ -27,11 +27,11 @@ model Account {
   balance      Decimal       @default(0)
   createdAt    DateTime      @default(now())
   userId       String
+  dateCreated  DateTime?
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 }
 
-//TODO: Allow users to toggle recurring or not
 model Transaction {
   id          String   @id @default(cuid())
   amount      Decimal
@@ -39,20 +39,19 @@ model Transaction {
   date        DateTime @default(now())
   createdAt   DateTime @default(now())
   accountId   String
-  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   categoryId  String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category    Category @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model Category {
-  id        String       @id @default(cuid())
-  name      String
-  type      CategoryType
-  createdAt DateTime     @default(now())
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  budgetgoal BudgetGoal[]
+  id           String        @id @default(cuid())
+  name         String
+  type         CategoryType
+  createdAt    DateTime      @default(now())
+  userId       String
+  budgetgoal   BudgetGoal[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 }
 
@@ -71,26 +70,25 @@ model Investment {
 model Budget {
   id        String       @id @default(cuid())
   userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  month     Int          // 1-12
+  month     Int
   year      Int
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
-
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   goals     BudgetGoal[]
-  
-  @@unique([userId, month, year]) // ensures only one budget per user per month
+
+  @@unique([userId, month, year])
 }
 
 model BudgetGoal {
   id         String   @id @default(cuid())
   budgetId   String
-  budget     Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   categoryId String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   goalAmount Decimal
+  budget     Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-   @@unique([budgetId, categoryId])
+  @@unique([budgetId, categoryId])
 }
 
 enum AccountType {

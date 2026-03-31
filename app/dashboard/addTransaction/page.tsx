@@ -159,6 +159,7 @@ export default function addTransaction() {
                                     ))}
                                 </select>
                             </div>
+                            
                             {/* Category Dropdown */}
                             <div className="mb-4">
                                 <label htmlFor="category" className="block text-lg font-medium mb-2">
