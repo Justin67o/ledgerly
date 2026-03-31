@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { Account } from "@/generated/prisma/client";
+import { PencilIcon, Trash2Icon } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
-
-export default function Activity(){
+export default function Accounts(){
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
@@ -19,6 +21,20 @@ export default function Activity(){
     SAVINGS: "bg-blue-500 text-white",
     };
 
+    const [confirmOpen, setConfirmOpen] = useState(false);
+     
+    // handle transaction deletion
+    const handleDelete = async (accountId: string) => {
+        try {
+            await apiFetch(`/api/accounts/${accountId}`, {
+                method: "DELETE"
+            });
+            // Remove the deleted transaction from the state
+            setAccounts(accounts.filter(acc => acc.id !== accountId));
+        } catch (error) {
+            console.error("Error deleting transaction:", error);
+        }
+    };
     useEffect(() => {
         const fetchdata = async () => {
             try{
@@ -42,7 +58,7 @@ export default function Activity(){
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                     <h1 className="text-2xl font-semibold mb-4 pt-4">Accounts</h1>
                      <button
-                        className="px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+                        className="cursor-pointer px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
                         style={{ backgroundColor: "var(--accent)", color: "#000" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
@@ -61,8 +77,10 @@ export default function Activity(){
                                 key={account.id}
                                 className="w-full p-4 rounded-2xl flex justify-between 
                                             bg-(--bg-card) border border-(--border)
-                                            text-left appearance-none focus:outline-none"
-                                onClick={() => console.log("Clicked account", account.id)}
+                                            text-left appearance-none focus:outline-none 
+                                            hover:scale-105 transition-all duration-150
+                                            cursor-pointer"
+                                onClick={() => router.push(`/dashboard/accounts/${account.id}`)}
 >
                               
                                 <div>
@@ -78,6 +96,28 @@ export default function Activity(){
                                     <span className={`px-2 py-0.5 text-lg rounded-full ${accountColors[account.type] || "bg-gray-200 text-gray-800"}`}>
                                         {account.type}
                                     </span>
+                                    <div>
+                                        <button
+
+                                            className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
+                                            onClick={() => router.push(`/dashboard/editAccount/${account.id}`)}
+                                        >
+                                            <PencilIcon className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+                                        </button>
+                                        <button
+
+                                            className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
+                                            onClick={() => {setConfirmOpen(true)}}
+                                        >
+                                            <Trash2Icon className="w-5 h-5 text-red-800 dark:text-red-800" />
+                                        </button>
+                                        <DeleteConfirmation
+                                            isOpen={confirmOpen}
+                                            onCancel={() => setConfirmOpen(false)}
+                                            onConfirm={() => handleDelete(account.id)}
+                                            itemName={`account "${account.name}"`}
+                                        />
+                                    </div>
                                 </div>
                             </button>
                         ))}

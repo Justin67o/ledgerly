@@ -53,10 +53,6 @@ export default function addTransaction() {
             });
 
 
-            if(!res.ok){
-                alert(`Error adding transaction`);
-            }
-
                 alert("Transaction added successfully!");
                 setAiInput("");
                 setAccountId("");
@@ -159,7 +155,7 @@ export default function addTransaction() {
                                     ))}
                                 </select>
                             </div>
-                            
+
                             {/* Category Dropdown */}
                             <div className="mb-4">
                                 <label htmlFor="category" className="block text-lg font-medium mb-2">

@@ -28,7 +28,7 @@ export default function Dashboard() {
   const netWorth = accounts.reduce((sum, a) => sum + parseFloat(a.balance.toString()), 0);
 
   const router = useRouter();
-  
+
   useEffect(() => {
     
     const fetchdata = async () => {
@@ -134,7 +134,11 @@ export default function Dashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold">Accounts</h2>
-            <button className="text-sm transition" style={{ color: "var(--accent)" }}>
+            <button className="cursor-pointer text-sm transition" style={{ color: "var(--accent)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-hover)")}
+                onClick={() => router.push("/dashboard/accounts")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--accent)")}
+            >
               View all
             </button>
           </div>
@@ -146,6 +150,7 @@ export default function Dashboard() {
                 style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card)")}
+                onClick={() => router.push(`/dashboard/accounts/${account.id}`)}
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium">{account.name}</span>

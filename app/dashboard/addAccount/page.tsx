@@ -28,12 +28,12 @@ export default function addTransaction() {
         e.preventDefault();
         
         // Check manual fill status
-        let manuallyFilled = type && amount && name;
+        let manuallyFilled = type && amount && name && date;
 
         if(type === "INVESTMENT" && (amount === "" || isNaN(parseFloat(amount)))){
             manuallyFilled = type && name;
         } else{
-            manuallyFilled = type && amount && name;
+            manuallyFilled = type && amount && name && date;
         }
 
         // Validation: require either manual input
@@ -129,7 +129,7 @@ export default function addTransaction() {
                             {/* Date Input */}
                             <div className="mb-4">
                                 <label htmlFor="date" className="block text-lg font-medium mb-2">
-                                    Date Created (Optional):
+                                    Date Created:
                                 </label>
                                 <input
                                     id="date"

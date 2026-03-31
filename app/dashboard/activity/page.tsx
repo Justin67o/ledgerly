@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
-import type { Transaction } from "@/generated/prisma/client";
 import { Prisma } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
 
@@ -41,7 +40,7 @@ export default function Activity(){
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                     <h1 className="text-2xl font-semibold mb-4 pt-4">Recent Activity</h1>
                      <button
-                        className="px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+                        className="px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer"
                         style={{ backgroundColor: "var(--accent)", color: "#000" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
