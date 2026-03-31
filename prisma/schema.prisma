@@ -27,7 +27,7 @@ model Account {
   balance      Decimal       @default(0)
   createdAt    DateTime      @default(now())
   userId       String
-  dateCreated  DateTime?
+  dateCreated  String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 }
@@ -36,7 +36,7 @@ model Transaction {
   id          String   @id @default(cuid())
   amount      Decimal
   description String?
-  date        DateTime @default(now())
+  date        String
   createdAt   DateTime @default(now())
   accountId   String
   categoryId  String
@@ -64,6 +64,7 @@ model Investment {
   currentPrice  Decimal
   createdAt     DateTime       @default(now())
   userId        String
+  date          String
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

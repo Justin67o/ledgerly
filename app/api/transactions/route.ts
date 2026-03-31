@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       data: {
         amount: new Prisma.Decimal(data.amount),
         description: data.name,
-        date: data.date ? new Date(data.date) : new Date(),
+        date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
         createdAt: data.createdAt ?? new Date(),
         accountId: account.id,
         categoryId: category.id

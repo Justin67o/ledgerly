@@ -82,3 +82,22 @@ export async function DELETE(
 
 
 }
+
+// Get request to get a single transaction by id
+export async function GET(
+    req: Request,
+    {params}: {params: Promise<{id: string}>})
+{
+    const user = await requireAuthentication();
+    if (!user) return new Response("Unauthorized", { status: 401 });
+    const { id } = await params;
+    const transaction = await prisma.transaction.findUnique({
+        where: {id: id },
+        include: { account: true },
+    });
+
+    if(!transaction || transaction.account.userId !== user.id){
+        return new Response("Unauthorized", { status: 401 });
+    }
+    return NextResponse.json({data: transaction}, {status: 200});
+}

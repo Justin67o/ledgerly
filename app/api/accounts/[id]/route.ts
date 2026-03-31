@@ -60,6 +60,7 @@ export async function DELETE(
     
         return NextResponse.json({message: 'Account deleted successfully'}, {status: 200});
     } catch (error) {
+        console.log("Error deleting account:", error);
         return NextResponse.json({message: 'Error deleting account, ${error.message}'}, {status: 500});
     }
 

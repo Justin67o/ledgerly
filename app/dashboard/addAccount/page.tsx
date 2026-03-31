@@ -4,18 +4,21 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 
 export default function addTransaction() {
-    
+
     const [isLoading, setIsLoading] = useState(true);
 
     const types = Object.values(AccountType);
 
     // Controlled inputs
     const [type, setType] = useState("");
-    const [date, setDate] = useState("");
+    const [date, setDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split("T")[0]; // "YYYY-MM-DD"
+    });
     const [amount, setAmount] = useState("");
     const [name, setName] = useState("");
     // Handle amount
-    
+
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
@@ -26,25 +29,25 @@ export default function addTransaction() {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
         e.preventDefault();
-        
+
         // Check manual fill status
         let manuallyFilled = type && amount && name && date;
 
-        if(type === "INVESTMENT" && (amount === "" || isNaN(parseFloat(amount)))){
+        if (type === "INVESTMENT" && (amount === "" || isNaN(parseFloat(amount)))) {
             manuallyFilled = type && name;
-        } else{
+        } else {
             manuallyFilled = type && amount && name && date;
         }
 
         // Validation: require either manual input
-        if(!manuallyFilled){
+        if (!manuallyFilled) {
             return;
         }
-        
+
         // If there is manual input, use that, if not, use AI input
         const accountData = { type, date, amount: parseFloat(amount), name };
 
-        try{
+        try {
             const res = await apiFetch("/api/accounts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -52,13 +55,12 @@ export default function addTransaction() {
             });
 
 
-                alert("Account added successfully!");
-                setType("");
-                setDate("");
-                setAmount("");
-                setName("");
+            setType("");
+            setDate("");
+            setAmount("");
+            setName("");
         }
-        catch(error){
+        catch (error) {
             console.error("Error submitting account:", error);
 
         }
@@ -66,12 +68,12 @@ export default function addTransaction() {
 
 
     return (
-         <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+        <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
             <main className="max-w-5xl mx-auto px-4 md:px-8 pt-2">
                 <div className="p-6 rounded-2xl mt-10" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
                     <form onSubmit={handleSubmit}>
                         <h1 className="text-xl font-semibold mb-4 text-center">Add Account</h1>
-                       
+
                         {/* Manual Input Fields */}
                         <div className="mt-6">
 
@@ -89,8 +91,8 @@ export default function addTransaction() {
                                     className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 />
                             </div>
-                            
-                           {/* Type Dropdown */}
+
+                            {/* Type Dropdown */}
                             <div className="mb-4">
                                 <label htmlFor="type" className="block text-lg font-medium mb-2">
                                     Type:
@@ -140,7 +142,7 @@ export default function addTransaction() {
                                 />
                             </div>
 
-                            
+
 
                             {/* Submit Button */}
                             <div className="mt-6">

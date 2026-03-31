@@ -87,7 +87,7 @@ export default function Accounts() {
                                 <div>
                                     <p className="font-medium text-xl">{account.name}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {new Date(account.createdAt).toLocaleDateString()}
+                                        {account.dateCreated}
                                     </p>
                                     <p className="text-lg font-bold" style={{ color: parseFloat(account.balance.toString()) >= 0 ? "var(--positive)" : "var(--negative)" }}>
                                         {parseFloat(account.balance.toString()) >= 0 ? "$" : "- $"}{Math.abs(parseFloat(account.balance.toString())).toFixed(2)}

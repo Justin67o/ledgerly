@@ -59,7 +59,7 @@ export default function Activity(){
                                 <div>
                                     <p className="font-medium text-xl">{tx.description}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {new Date(tx.date).toLocaleDateString()}
+                                        {tx.date}
                                     </p>
                                     <p className="text-lg font-bold" style={{ color: parseFloat(tx.amount.toString()) > 0 ? "var(--positive)" : "var(--negative)" }}>
                                         {parseFloat(tx.amount.toString()) > 0 ? "+ $" : "- $"}{Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}
