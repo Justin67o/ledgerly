@@ -51,9 +51,6 @@ export default function addTransaction() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(transactionData)
             });
-
-
-                alert("Transaction added successfully!");
                 setAiInput("");
                 setAccountId("");
                 setCategoryId("");

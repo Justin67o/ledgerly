@@ -46,7 +46,7 @@ export default function AccountPage() {
     const router = useRouter();
 
     // state for delete confirmation modal
-    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deletingTransaction, setDeletingTransaction] = useState<TransactionWithRelations | null>(null);
      
     // handle transaction deletion
     const handleDelete = async (transactionId: string) => {
@@ -200,15 +200,22 @@ export default function AccountPage() {
                                     <button
 
                                         className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
-                                        onClick={() => {setConfirmOpen(true)}}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeletingTransaction(tx);}}
                                     >
                                         <Trash2Icon className="w-5 h-5 text-red-800 dark:text-red-800" />
                                     </button>
                                     <DeleteConfirmation
-                                        isOpen={confirmOpen}
-                                        onCancel={() => setConfirmOpen(false)}
-                                        onConfirm={() => handleDelete(tx.id)}
-                                        itemName={`transaction "${tx.description}"`}
+                                        isOpen={!!deletingTransaction}
+                                        onCancel={() => setDeletingTransaction(null)}
+                                        onConfirm={() => {
+                                            if (deletingTransaction) {
+                                                handleDelete(deletingTransaction.id);
+                                                setDeletingTransaction(null);
+                                            }
+                                        }}
+                                        itemName={`transaction "${deletingTransaction?.description}"`}
                                     />
 
                                 </div>
