@@ -6,7 +6,6 @@ import type { Account, Prisma } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import { PencilIcon, Trash2Icon } from "lucide-react";
-import { Trash2 } from "lucide-react";
 import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
 type TransactionWithRelations = Prisma.TransactionGetPayload<{
@@ -47,7 +46,7 @@ export default function AccountPage() {
 
     // state for delete confirmation modal
     const [deletingTransaction, setDeletingTransaction] = useState<TransactionWithRelations | null>(null);
-     
+
     // handle transaction deletion
     const handleDelete = async (transactionId: string) => {
         try {
@@ -84,7 +83,14 @@ export default function AccountPage() {
 
         fetchdata();
     }, []);
-
+    if (isLoading || !account) {
+        return (
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
+                <p style={{ color: "var(--text-secondary)" }}>Loading...</p>
+            </div>
+        );
+    }
+    
     return (
         <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
 
@@ -151,17 +157,13 @@ export default function AccountPage() {
                             style={{ backgroundColor: "var(--accent)", color: "#000" }}
                             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
-                            onClick={() => router.push("/dashboard/addTransaction")}
+                            onClick={() => router.push(
+                                account.type === "INVESTMENT"
+                                    ? "/dashboard/addInvestment"
+                                    : "/dashboard/addTransaction"
+                            )}
                         >
-                            + Add Transaction
-                        </button>
-                        <button
-                            className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
-                            style={{ backgroundColor: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card)")}
-                        >
-                            + Add Investment
+                            {account.type === "INVESTMENT" ? "+ Add Investment" : "+ Add Transaction"}
                         </button>
                     </div>
                 </div>
@@ -202,7 +204,8 @@ export default function AccountPage() {
                                         className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setDeletingTransaction(tx);}}
+                                            setDeletingTransaction(tx);
+                                        }}
                                     >
                                         <Trash2Icon className="w-5 h-5 text-red-800 dark:text-red-800" />
                                     </button>

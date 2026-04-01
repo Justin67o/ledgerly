@@ -43,10 +43,9 @@ export const authOptions = {
     }),
   ],
   session: { strategy: "jwt" as const },
-// TODO: add custom sign in page and error handling for failed sign in attempts
-//   pages: {
-//     signIn: "/auth/signin",
-//   },
+  pages: {
+    signIn: "/login",
+  },
 };
 
 const handler = NextAuth(authOptions);
