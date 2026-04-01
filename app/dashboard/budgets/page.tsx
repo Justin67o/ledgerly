@@ -1,5 +1,15 @@
 'use client'
 
+import { useState } from "react";
+import { ChevronDownIcon, PlusIcon } from "lucide-react";
+
+const MOCK_BUDGETS = [
+  "April 2026",
+  "March 2026",
+  "February 2026",
+  "January 2026",
+];
+
 const MOCK_GOALS = [
   { category: "Groceries",    spent: 420,  goal: 500  },
   { category: "Dining Out",   spent: 280,  goal: 200  },
@@ -40,6 +50,9 @@ function ProgressBar({ spent, goal }: { spent: number; goal: number }) {
 }
 
 export default function Budgets() {
+  const [selectedBudget, setSelectedBudget] = useState(MOCK_BUDGETS[0]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
   const overallPct     = Math.min((totalSpent / totalGoal) * 100, 100);
   const overallOver    = totalSpent > totalGoal;
   const overallColor   = overallOver ? "var(--negative)" : "var(--accent)";
@@ -51,8 +64,66 @@ export default function Budgets() {
     >
       <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
 
-        {/* Page title */}
-        <h1 className="text-4xl font-bold tracking-tight mb-6">Goals</h1>
+        {/* Page title row */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-4xl font-bold tracking-tight">Goals</h1>
+
+          <div className="flex items-center gap-3">
+            {/* Budget period dropdown */}
+            <div className="relative">
+              <button
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150"
+                style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card)")}
+                onClick={() => setDropdownOpen((o) => !o)}
+              >
+                {selectedBudget}
+                <ChevronDownIcon
+                  className="w-4 h-4 transition-transform duration-150"
+                  style={{
+                    color: "var(--text-muted)",
+                    transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  }}
+                />
+              </button>
+
+              {dropdownOpen && (
+                <div
+                  className="absolute right-0 mt-1 w-44 rounded-xl overflow-hidden z-10"
+                  style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}
+                >
+                  {MOCK_BUDGETS.map((b) => (
+                    <button
+                      key={b}
+                      className="w-full text-left px-4 py-2.5 text-sm transition-all duration-100"
+                      style={{
+                        color: b === selectedBudget ? "var(--accent)" : "var(--text-primary)",
+                        backgroundColor: "transparent",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                      onClick={() => { setSelectedBudget(b); setDropdownOpen(false); }}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Create new goal button */}
+            <button
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-150"
+              style={{ backgroundColor: "var(--accent)", color: "#000" }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
+            >
+              <PlusIcon className="w-4 h-4" />
+              New Goal
+            </button>
+          </div>
+        </div>
 
         <div className="flex flex-col md:flex-row md:gap-8">
 
