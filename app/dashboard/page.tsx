@@ -124,6 +124,7 @@ export default function Dashboard() {
               style={{ backgroundColor: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card)")}
+              onClick={() => router.push("/dashboard/addInvestment")}
             >
               + Add Investment
             </button>

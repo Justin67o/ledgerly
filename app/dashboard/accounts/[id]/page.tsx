@@ -15,6 +15,12 @@ type TransactionWithRelations = Prisma.TransactionGetPayload<{
     };
 }>;
 
+type InvestmentWithRelations = Prisma.InvestmentGetPayload<{
+    include: {
+        account: true;
+    }
+}>
+
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
@@ -33,7 +39,7 @@ export default function AccountPage() {
     const id = params.id; // <-- this is your account id
 
     const [transactions, setTransactions] = useState<TransactionWithRelations[]>([]);
-
+    const [investments, setInvestments] = useState<InvestmentWithRelations[]>([]);
     const [account, setAccount] = useState<Account | null>(null);
 
     const [timeframe, setTimeframe] = useState("1M");
@@ -46,9 +52,10 @@ export default function AccountPage() {
 
     // state for delete confirmation modal
     const [deletingTransaction, setDeletingTransaction] = useState<TransactionWithRelations | null>(null);
+    const [deletingInvestment, setDeletingInvestment] = useState<InvestmentWithRelations | null>(null);
 
     // handle transaction deletion
-    const handleDelete = async (transactionId: string) => {
+    const handleDeleteTransaction = async (transactionId: string) => {
         try {
             await apiFetch(`/api/transactions/${transactionId}`, {
                 method: "DELETE"
@@ -60,7 +67,17 @@ export default function AccountPage() {
         }
     };
 
-
+    const handleDeleteInvestment = async (investmentId: string) => {
+        try {
+            await apiFetch(`/api/investments/${investmentId}`, {
+                method: "DELETE"
+            });
+            // Remove the deleted transaction from the state
+            setInvestments(investments.filter(tx => tx.id !== investmentId));
+        } catch (error) {
+            console.error("Error deleting transaction:", error);
+        }
+    };
 
     useEffect(() => {
 
@@ -69,8 +86,17 @@ export default function AccountPage() {
             try {
                 const fetchedAccount = await apiFetch(`/api/accounts/${id}`);
                 setAccount(fetchedAccount.data);
-                const fetchedTransactions = await apiFetch(`/api/transactions?accountId=${id}`);
-                setTransactions(fetchedTransactions.data);
+
+                if (fetchedAccount.data.type !== "INVESTMENT") {
+                    const fetchedTransactions = await apiFetch(`/api/transactions?accountId=${id}`);
+                    setTransactions(fetchedTransactions.data);
+                } else {
+                    const fetchedInvestments = await apiFetch(`/api/investments?accountId=${id}`);
+                    setInvestments(fetchedInvestments.data);
+                }
+
+
+
                 setIsLoading(false);
             }
             catch (error) {
@@ -174,8 +200,8 @@ export default function AccountPage() {
                 </div>
 
                 {isLoading ? (
-                    <p>Loading transactions...</p>
-                ) : (
+                    <p>Loading...</p>
+                ) : account.type !== "INVESTMENT" ? (
                     <div className="space-y-4">
                         {transactions.map((tx) => (
                             <div key={tx.id} className="p-4 rounded-2xl flex justify-between" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
@@ -189,10 +215,10 @@ export default function AccountPage() {
                                     </p>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    {tx.category &&<span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
+                                    {tx.category && <span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
                                         {tx.category.name}
                                     </span>}
-                                    
+
                                     <button
 
                                         className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
@@ -215,13 +241,66 @@ export default function AccountPage() {
                                         onCancel={() => setDeletingTransaction(null)}
                                         onConfirm={() => {
                                             if (deletingTransaction) {
-                                                handleDelete(deletingTransaction.id);
+                                                handleDeleteTransaction(deletingTransaction.id);
                                                 setDeletingTransaction(null);
                                             }
                                         }}
                                         itemName={`transaction "${deletingTransaction?.description}"`}
                                     />
 
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {investments.map((inv) => (
+                            <div key={inv.id} className="p-4 rounded-2xl flex justify-between" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                                <div>
+                                    <p className="font-medium text-xl">{inv.name}</p>
+                                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{inv.date}</p>
+                                    <p className="text-lg font-bold">{inv.quantity.toString()} units @ {formatCurrency(parseFloat(inv.purchasePrice.toString()))}</p>
+                                </div>
+
+                                <div className="flex flex-col justify-center">
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-xl font-medium text-white-600">
+                                            $1420.03
+                                        </span>
+
+                                        <span className="text-sm text-green-600">
+                                            + $300.23 (+12.33%)
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-end items-center space-x-2">
+                                        
+                                        <button
+                                            className="relative px-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
+                                            onClick={() => router.push(`/dashboard/editInvestment/${inv.id}`)}
+                                        >
+                                            <PencilIcon className="w-4 h-4 text-gray-800 dark:text-gray-200" />
+                                        </button>
+                                        <button
+                                            className="relative px-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeletingInvestment(inv);
+                                            }}
+                                        >
+                                            <Trash2Icon className="w-4 h-4 text-red-800" />
+                                        </button>
+                                        <DeleteConfirmation
+                                            isOpen={!!deletingInvestment}
+                                            onCancel={() => setDeletingInvestment(null)}
+                                            onConfirm={() => {
+                                                if (deletingInvestment) {
+                                                    handleDeleteInvestment(deletingInvestment.id);
+                                                    setDeletingInvestment(null);
+                                                }
+                                            }}
+                                            itemName={`investment "${deletingInvestment?.name}"`}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         ))}
