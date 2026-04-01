@@ -5,7 +5,6 @@ import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { Account } from "@/generated/prisma/client";
 import { PencilIcon, Trash2Icon } from "lucide-react";
-import { Trash2 } from "lucide-react";
 import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
 export default function Accounts() {
