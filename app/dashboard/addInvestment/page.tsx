@@ -216,7 +216,7 @@ export default function addInvestment() {
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
                                 >
-                                    Add Transaction
+                                    Add Investment
                                 </button>
                             </div>
                         </div>

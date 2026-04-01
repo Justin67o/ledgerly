@@ -6,28 +6,39 @@ import { apiFetch } from "@/lib/api";
 import { useParams } from "next/navigation";
 
 
-export default function editTransaction() {
-    // State for all accounts and categories of the user
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+export default function editInvestment() {
 
     const params = useParams();
-    const id = params.id; // <-- this is your transaction id
+    const id = params.id; // <-- this is your investment id
+
+    // State for all accounts of the user
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Controlled inputs
+
     const [accountId, setAccountId] = useState("");
-    const [categoryId, setCategoryId] = useState("");
-    const [date, setDate] = useState("");
-    const [amount, setAmount] = useState("");
+    const [date, setDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split("T")[0]; // "YYYY-MM-DD"
+    });
+    const [purchasePrice, setPurchasePrice] = useState("");
+    const [quantity, setQuantity] = useState("");
     const [name, setName] = useState("");
     // Handle amount
 
-    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
 
-        setAmount(value);
+        setQuantity(value);
+    };
+
+    const handlePurchasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value
+        if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
+
+        setPurchasePrice(value);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -35,32 +46,33 @@ export default function editTransaction() {
         e.preventDefault();
 
         // Check manual fill status
-        const manuallyFilled = accountId && categoryId && date && amount && name;
+        const manuallyFilled = accountId && date && purchasePrice && name && quantity;
 
-        // Validation: require either manual
+
+        // Validation: require either manual or AI input
         if (!manuallyFilled) {
-            //alert("Please fill out all manual fields.");
+            //alert("Please fill out either the AI input or all manual fields.");
             return;
         }
 
         // If there is manual input, use that, if not, use AI input
         // TODO: implement AI parsing logic to extract accountId, categoryId, date, and amount from aiInput
-        const transactionData = { accountId, categoryId, date, amount: parseFloat(amount), name };
+        const investmentData = { accountId, date, quantity: parseFloat(quantity), purchasePrice: parseFloat(purchasePrice), name };
 
         try {
-            const res = await apiFetch(`/api/transactions/${id}`, {
+            const res = await apiFetch(`/api/investments/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(transactionData)
+                body: JSON.stringify(investmentData)
             });
             setAccountId("");
-            setCategoryId("");
+            setQuantity("");
             setDate("");
-            setAmount("");
+            setPurchasePrice("");
             setName("");
         }
         catch (error) {
-            console.error("Error updating transaction:", error);
+            console.error("Error submitting investment:", error);
 
         }
     };
@@ -70,24 +82,24 @@ export default function editTransaction() {
         const fetchdata = async () => {
 
             try {
-                const transaction = await apiFetch(`/api/transactions/${id}`);
-                const { accountId, categoryId, date, amount, description } = transaction.data;
+                const investment = await apiFetch(`/api/investments/${id}`);
+                const { accountId, date, quantity, name, purchasePrice } = investment.data;
 
-                setAccountId(accountId);
-                setCategoryId(categoryId ?? "");
+
+                setAccountId(accountId)
                 setDate(date);
-                setAmount(amount.toString());
-                setName(description);
-                
+                setQuantity(quantity);
+                setName(name);
+                setPurchasePrice(purchasePrice);
+
                 const fetchedAccounts = await apiFetch(`/api/accounts`);
                 setAccounts(fetchedAccounts.data);
 
-                const fetchedCategories = await apiFetch(`/api/categories`);
-                setCategories(fetchedCategories.data);
+                
                 setIsLoading(false);
             }
             catch (error) {
-                console.error("Error fetching accounts or categories:", error);
+                console.error("Error fetching data: ", error);
                 setIsLoading(false);
                 return;
             }
@@ -102,22 +114,22 @@ export default function editTransaction() {
             <main className="max-w-5xl mx-auto px-4 md:px-8 pt-2">
                 <div className="p-6 rounded-2xl mt-10" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
                     <form onSubmit={handleSubmit}>
-                        <h1 className="text-xl font-semibold mb-4 text-center">Edit Transaction</h1>
-
-                        {/* Manual Input Fields */}
+                        <h1 className="text-xl font-semibold mb-4 text-center">Edit Investment</h1>
+                        
+ 
                         <div className="mt-6">
 
-                            {/* Name Input */}
+                            {/* Ticker Input */}
                             <div className="mb-4">
-                                <label htmlFor="amount" className="block text-lg font-medium mb-2">
-                                    Name:
+                                <label htmlFor="ticker" className="block text-lg font-medium mb-2">
+                                    Ticker:
                                 </label>
                                 <input
-                                    id="amount"
+                                    id="ticker"
                                     type="string"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="Enter name..."
+                                    placeholder="Enter ticker..."
                                     className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 />
                             </div>
@@ -132,34 +144,17 @@ export default function editTransaction() {
                                     onChange={(e) => setAccountId(e.target.value)}
                                     className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
                                 >
-                                    <option value="">Select an account</option>
-                                    {accounts.map((account) => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name}
-                                        </option>
-                                    ))}
+                                    <option value="" className="">Select an account</option>
+                                    {accounts
+                                        .filter(account => account.type === "INVESTMENT")
+                                        .map((account) => (
+                                            <option key={account.id} value={account.id}>
+                                                {account.name}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
 
-                            {/* Category Dropdown */}
-                            <div className="mb-4">
-                                <label htmlFor="category" className="block text-lg font-medium mb-2">
-                                    Category:
-                                </label>
-                                <select
-                                    id="category"
-                                    value={categoryId}
-                                    onChange={(e) => setCategoryId(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
-                                >
-                                    <option value="">Select a category</option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
 
                             {/* Date Input */}
                             <div className="mb-4">
@@ -175,17 +170,32 @@ export default function editTransaction() {
                                 />
                             </div>
 
-                            {/* Amount Input */}
+                            {/* Purchase Price Input */}
                             <div className="mb-4">
-                                <label htmlFor="amount" className="block text-lg font-medium mb-2">
-                                    Amount:
+                                <label htmlFor="purchasePrice" className="block text-lg font-medium mb-2">
+                                    Purchase Price:
                                 </label>
                                 <input
-                                    id="amount"
+                                    id="purchasePrice"
                                     type="number"
-                                    value={amount}
-                                    onChange={handleAmountChange}
-                                    placeholder="Enter amount..."
+                                    value={purchasePrice}
+                                    onChange={handlePurchasePriceChange}
+                                    placeholder="Enter purchase price..."
+                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                />
+                            </div>
+
+                            {/* Quantity Input */}
+                            <div className="mb-4">
+                                <label htmlFor="quantity" className="block text-lg font-medium mb-2">
+                                    Quantity:
+                                </label>
+                                <input
+                                    id="quantity"
+                                    type="number"
+                                    value={quantity}
+                                    onChange={handleQuantityChange}
+                                    placeholder="Enter quantity..."
                                     className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 />
                             </div>
@@ -199,7 +209,7 @@ export default function editTransaction() {
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
                                 >
-                                    Save Transaction
+                                    Save Investment
                                 </button>
                             </div>
                         </div>
