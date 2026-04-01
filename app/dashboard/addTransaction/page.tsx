@@ -148,11 +148,13 @@ export default function addTransaction() {
                                     className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
                                 >
                                     <option value="" className="">Select an account</option>
-                                    {accounts.map((account) => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name}
-                                        </option>
-                                    ))}
+                                    {accounts
+                                        .filter(account => account.type !== "INVESTMENT")
+                                        .map((account) => (
+                                            <option key={account.id} value={account.id}>
+                                                {account.name}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
 

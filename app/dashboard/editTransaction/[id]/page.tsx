@@ -35,7 +35,7 @@ export default function editTransaction() {
         e.preventDefault();
 
         // Check manual fill status
-        const manuallyFilled = accountId && categoryId && date && amount && name;
+        const manuallyFilled = accountId && date && amount && name;
 
         // Validation: require either manual
         if (!manuallyFilled) {
@@ -78,7 +78,7 @@ export default function editTransaction() {
                 setDate(date);
                 setAmount(amount.toString());
                 setName(description);
-                
+
                 const fetchedAccounts = await apiFetch(`/api/accounts`);
                 setAccounts(fetchedAccounts.data);
 
@@ -133,11 +133,13 @@ export default function editTransaction() {
                                     className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
                                 >
                                     <option value="">Select an account</option>
-                                    {accounts.map((account) => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name}
-                                        </option>
-                                    ))}
+                                    {accounts
+                                        .filter(account => account.type !== "INVESTMENT")
+                                        .map((account) => (
+                                            <option key={account.id} value={account.id}>
+                                                {account.name}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
 

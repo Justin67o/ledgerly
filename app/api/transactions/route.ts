@@ -69,6 +69,17 @@ export async function POST(request: Request) {
     })
 
     console.log("Created transaction:", transaction);
+
+    await prisma.account.update({
+      where: { id: account.id },
+      data:{
+        balance: {
+          increment: data.amount
+        }
+      } 
+    })
+
+
     return NextResponse.json({ message: 'Transaction created successfully', data: transaction }, { status: 201 });
   } catch (error) {
     if (error instanceof Error) {
