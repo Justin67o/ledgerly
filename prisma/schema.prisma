@@ -17,7 +17,6 @@ model User {
   accounts    Account[]
   budgets     Budget[]
   categories  Category[]
-  investments Investment[]
 }
 
 model Account {
@@ -59,15 +58,11 @@ model Category {
 model Investment {
   id            String         @id @default(cuid())
   name          String
-  type          InvestmentType
   quantity      Decimal
   purchasePrice Decimal
-  currentPrice  Decimal
   createdAt     DateTime       @default(now())
   accountId     String
-  userId        String
   date          String
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
@@ -105,11 +100,4 @@ enum AccountType {
 enum CategoryType {
   INCOME
   EXPENSE
-}
-
-enum InvestmentType {
-  STOCK
-  CRYPTO
-  ETF
-  OTHER
 }

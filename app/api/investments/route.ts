@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         account: { userId: user.id } },
       include: { account: true },
     });
-    return NextResponse.json({ message: 'Transactions retrieved successfully', data: userInvestments }, { status: 200 });
+    return NextResponse.json({ message: 'Investments retrieved successfully', data: userInvestments }, { status: 200 });
   } catch (error) {
     if (error instanceof Error) {
       console.log("Error retrieving transactions:", error);
@@ -51,21 +51,22 @@ export async function POST(request: Request) {
 
   try {
     console.log("Creating investment with account ID:", data.accountId);
-    const transaction = await prisma.transaction.create({
+    const investment = await prisma.investment.create({
       data: {
-        amount: new Prisma.Decimal(data.amount),
-        description: data.name,
+        quantity: new Prisma.Decimal(data.quantity),
+        purchasePrice: new Prisma.Decimal(data.purchasePrice),
+        name: data.name,
         date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
         createdAt: data.createdAt ?? new Date(),
         accountId: account.id,
       }
     })
 
-    console.log("Created transaction:", transaction);
-    return NextResponse.json({ message: 'Transaction created successfully', data: transaction }, { status: 201 });
+    console.log("Created investment:", investment);
+    return NextResponse.json({ message: 'Investment created successfully', data: investment }, { status: 201 });
   } catch (error) {
     if (error instanceof Error) {
-      return NextResponse.json({ message: `Error creating transaction, ${error.message}` }, { status: 500 });
+      return NextResponse.json({ message: `Error creating investment, ${error.message}` }, { status: 500 });
     }
   }
 }

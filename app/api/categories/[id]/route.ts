@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 
-//TODO: add authentication and authorization to ensure users can only access their own accounts
 // update one specific existing account by id
 
 export async function PUT(request: Request,
