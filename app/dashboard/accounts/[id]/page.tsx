@@ -90,7 +90,7 @@ export default function AccountPage() {
             </div>
         );
     }
-    
+
     return (
         <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
 
@@ -189,9 +189,10 @@ export default function AccountPage() {
                                     </p>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
+                                    {tx.category &&<span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
                                         {tx.category.name}
-                                    </span>
+                                    </span>}
+                                    
                                     <button
 
                                         className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"

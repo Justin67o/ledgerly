@@ -53,8 +53,8 @@ export async function DELETE(
             return new Response("Unauthorized", { status: 401 });
         }
         await prisma.category.delete({
-        where: {id: id},
-    });
+            where: {id: id},
+        });
     
         return NextResponse.json({message: 'Category deleted successfully'}, {status: 200});
     } catch (error) {
