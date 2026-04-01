@@ -29,16 +29,16 @@ export async function POST(request: Request) {
     console.log("Received data for new account:", data);
 
     if (data.type === "INVESTMENT") {
-        data.amount = 0;
+        data.balance = 0;
     }
-    console.log("Data after processing for account creation:", data.date);
+    console.log("Data after processing for account creation:", data.balance);
     try {
         const account = await prisma.account.create({
             data: {
                 name: data.name,
                 type: data.type,
                 dateCreated: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
-                balance: new Prisma.Decimal(data.amount || 0),
+                balance: new Prisma.Decimal(data.balance || 0),
                 userId: user.id
             }
         })

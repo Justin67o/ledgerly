@@ -34,7 +34,7 @@ export default function addAccount() {
         let manuallyFilled = type && balance && name && date;
 
         if (type === "INVESTMENT" && (balance === "" || isNaN(parseFloat(balance)))) {
-            manuallyFilled = type && name;
+            manuallyFilled = type && name && date;
         } else {
             manuallyFilled = type && balance && name && date;
         }
