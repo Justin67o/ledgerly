@@ -6,25 +6,25 @@ import { Prisma } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
 
 type TransactionWithRelations = Prisma.TransactionGetPayload<{
-  include: {
-    account: true;
-    category: true;
-  };
+    include: {
+        account: true;
+        category: true;
+    };
 }>;
 
-export default function Activity(){
+export default function Activity() {
     const [transactions, setTransactions] = useState<TransactionWithRelations[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
         const fetchdata = async () => {
-            try{
+            try {
                 const fetchedTransactions = await apiFetch("/api/transactions");
                 setTransactions(fetchedTransactions.data);
                 setIsLoading(false);
             }
-            catch(error){
+            catch (error) {
                 console.error("Error fetching transactions:", error);
                 setIsLoading(false);
                 return;
@@ -39,17 +39,17 @@ export default function Activity(){
             <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                     <h1 className="text-2xl font-semibold mb-4 pt-4">Recent Activity</h1>
-                     <button
+                    <button
                         className="px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer"
                         style={{ backgroundColor: "var(--accent)", color: "#000" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
                         onClick={() => router.push("/dashboard/addTransaction")}
-                        >
+                    >
                         + Add Transaction
                     </button>
                 </div>
-                
+
                 {isLoading ? (
                     <p>Loading transactions...</p>
                 ) : (
@@ -69,9 +69,10 @@ export default function Activity(){
                                     <span className="px-2 py-0.5 text-lg rounded-full bg-gray-200 text-gray-800">
                                         {tx.account.name}
                                     </span>
-                                    <span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
+                                    {tx.category && <span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
                                         {tx.category.name}
                                     </span>
+                                    }
                                 </div>
                             </div>
                         ))}

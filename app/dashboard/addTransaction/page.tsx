@@ -34,7 +34,7 @@ export default function addTransaction() {
         e.preventDefault();
 
         // Check manual fill status
-        const manuallyFilled = accountId && categoryId && date && amount && name;
+        const manuallyFilled = accountId && date && amount && name;
         // Check AI fill status
         const aiFilled = aiInput.trim() !== "";
 
