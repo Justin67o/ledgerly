@@ -47,9 +47,7 @@ export async function POST(request: Request) {
   const category = await prisma.category.findUnique({
     where: { id: data.categoryId },
   });
-  if (!category || category.userId !== user.id) {
-    return new Response("Invalid category", { status: 400 })
-  }
+
   if (!account || account.userId !== user.id) {
     return new Response("Invalid account", { status: 400 });
   }
@@ -66,7 +64,7 @@ export async function POST(request: Request) {
         date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
         createdAt: data.createdAt ?? new Date(),
         accountId: account.id,
-        categoryId: category.id
+        categoryId: category?.id ?? null
       }
     })
 

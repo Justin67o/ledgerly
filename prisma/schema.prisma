@@ -30,6 +30,7 @@ model Account {
   dateCreated  String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  investments  Investment[]
 }
 
 model Transaction {
@@ -39,9 +40,9 @@ model Transaction {
   date        String
   createdAt   DateTime @default(now())
   accountId   String
-  categoryId  String
+  categoryId  String?
   account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model Category {
@@ -63,9 +64,11 @@ model Investment {
   purchasePrice Decimal
   currentPrice  Decimal
   createdAt     DateTime       @default(now())
+  accountId     String
   userId        String
   date          String
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
 model Budget {

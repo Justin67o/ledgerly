@@ -20,9 +20,7 @@ export async function PUT(request: Request,
     const category = await prisma.category.findUnique({
         where: { id: data.categoryId },
     });
-    if(!category || category.userId !== user.id){
-        return new Response("Invalid category", {status: 400})
-    }
+
     if (!account || account.userId !== user.id) {
         return new Response("Invalid account", { status: 400 });
     }
@@ -32,18 +30,15 @@ export async function PUT(request: Request,
             where: { id: id }
         })
 
-        if(!category || category.userId !== user.id){
-            return new Response("Unauthorized", { status: 401 });
-        }
 
         const updatedTransaction = await prisma.transaction.update({
         where: { id: id },
         data: {
             ...(data.amount && { amount: data.amount }),
-            ...(data.name && { description: data.name }),
+            ...(data.description && { description: data.description }),
             ...(data.date && { date: data.date }),
             ...(data.accountId && { accountId: data.accountId }),
-            ...(data.categoryId && { categoryId: data.categoryId }),
+            categoryId: category?.id ?? null,
         }
         });
         console.log("Updated transaction:", updatedTransaction);
@@ -72,8 +67,8 @@ export async function DELETE(
             return new Response("Unauthorized", { status: 401 });
         }
         await prisma.transaction.delete({
-        where: {id: id},
-    });
+            where: {id: id},
+        });
     
         return NextResponse.json({message: 'Transaction deleted successfully'}, {status: 200});
     } catch (error) {
@@ -81,23 +76,4 @@ export async function DELETE(
     }
 
 
-}
-
-// Get request to get a single transaction by id
-export async function GET(
-    req: Request,
-    {params}: {params: Promise<{id: string}>})
-{
-    const user = await requireAuthentication();
-    if (!user) return new Response("Unauthorized", { status: 401 });
-    const { id } = await params;
-    const transaction = await prisma.transaction.findUnique({
-        where: {id: id },
-        include: { account: true },
-    });
-
-    if(!transaction || transaction.account.userId !== user.id){
-        return new Response("Unauthorized", { status: 401 });
-    }
-    return NextResponse.json({data: transaction}, {status: 200});
 }
