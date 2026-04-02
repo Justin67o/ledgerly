@@ -3,27 +3,19 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import type { Account, Prisma } from "@/generated/prisma/client";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
 type TransactionWithRelations = Prisma.TransactionGetPayload<{
-    include: {
-        account: true;
-        category: true;
-    };
+    include: { account: true; category: true };
 }>;
 
 type InvestmentWithRelations = Prisma.InvestmentGetPayload<{
-    include: {
-        account: true;
-    }
-}>
-
+    include: { account: true };
+}>;
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
-
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-CA", {
@@ -34,33 +26,23 @@ function formatCurrency(amount: number) {
 }
 
 export default function AccountPage() {
-
     const params = useParams();
-    const id = params.id; // <-- this is your account id
+    const id = params.id;
 
     const [transactions, setTransactions] = useState<TransactionWithRelations[]>([]);
     const [investments, setInvestments] = useState<InvestmentWithRelations[]>([]);
     const [account, setAccount] = useState<Account | null>(null);
-
     const [timeframe, setTimeframe] = useState("1M");
-
     const [isLoading, setIsLoading] = useState(true);
-
-    const accountBalance = account ? parseFloat(account.balance.toString()) : 0;
-
-    const router = useRouter();
-
-    // state for delete confirmation modal
     const [deletingTransaction, setDeletingTransaction] = useState<TransactionWithRelations | null>(null);
     const [deletingInvestment, setDeletingInvestment] = useState<InvestmentWithRelations | null>(null);
 
-    // handle transaction deletion
+    const router = useRouter();
+    const accountBalance = account ? parseFloat(account.balance.toString()) : 0;
+
     const handleDeleteTransaction = async (transactionId: string) => {
         try {
-            await apiFetch(`/api/transactions/${transactionId}`, {
-                method: "DELETE"
-            });
-            // Remove the deleted transaction from the state
+            await apiFetch(`/api/transactions/${transactionId}`, { method: "DELETE" });
             setTransactions(transactions.filter(tx => tx.id !== transactionId));
         } catch (error) {
             console.error("Error deleting transaction:", error);
@@ -69,20 +51,15 @@ export default function AccountPage() {
 
     const handleDeleteInvestment = async (investmentId: string) => {
         try {
-            await apiFetch(`/api/investments/${investmentId}`, {
-                method: "DELETE"
-            });
-            // Remove the deleted transaction from the state
-            setInvestments(investments.filter(tx => tx.id !== investmentId));
+            await apiFetch(`/api/investments/${investmentId}`, { method: "DELETE" });
+            setInvestments(investments.filter(inv => inv.id !== investmentId));
         } catch (error) {
-            console.error("Error deleting transaction:", error);
+            console.error("Error deleting investment:", error);
         }
     };
 
     useEffect(() => {
-
         const fetchdata = async () => {
-
             try {
                 const fetchedAccount = await apiFetch(`/api/accounts/${id}`);
                 setAccount(fetchedAccount.data);
@@ -94,71 +71,54 @@ export default function AccountPage() {
                     const fetchedInvestments = await apiFetch(`/api/investments?accountId=${id}`);
                     setInvestments(fetchedInvestments.data);
                 }
-
-
-
                 setIsLoading(false);
-            }
-            catch (error) {
+            } catch (error) {
                 console.error("Error fetching account:", error);
                 setIsLoading(false);
-                return;
             }
-
         };
-
         fetchdata();
     }, []);
+
     if (isLoading || !account) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
-                <p style={{ color: "var(--text-secondary)" }}>Loading...</p>
+                <p style={{ color: "var(--text-muted)" }}>Loading...</p>
             </div>
         );
     }
 
     return (
         <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
-
-
-            {/* Main Content */}
             <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
 
-                {/* Desktop: two-column layout — graph left, actions right */}
+                {/* Header row */}
                 <div className="flex flex-col md:flex-row md:gap-8 mb-8">
-
-                    {/* Left: Net Worth + Graph + Timeframe */}
                     <div className="flex-1">
-                        {/* Net Worth */}
-                        <div className="mb-4">
-                            <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
-                                {account ? account.name : "Account"}
-                            </p>
-                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                                {formatCurrency(accountBalance)}
-                            </h1>
-                            <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
-                                +$1,240.50 (5.1%) this month
-                            </p>
-                        </div>
+                        <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
+                            {account.name}
+                        </p>
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                            {formatCurrency(accountBalance)}
+                        </h1>
+                        <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
+                            +$1,240.50 (5.1%) this month
+                        </p>
 
                         {/* Graph Placeholder */}
                         <div
-                            className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4"
+                            className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4 mt-4"
                             style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
                         >
                             <div className="text-center">
                                 <div className="text-2xl mb-1">📈</div>
-                                <p className="text-sm">Net worth graph coming soon</p>
+                                <p className="text-sm">Graph coming soon</p>
                             </div>
                         </div>
 
                         {/* Timeframe Selector */}
                         <div className="flex justify-center">
-                            <div
-                                className="inline-flex left-0 right-0 rounded-xl p-1 gap-1"
-                                style={{ backgroundColor: "var(--bg-card)" }}
-                            >
+                            <div className="inline-flex rounded-xl p-1 gap-1" style={{ backgroundColor: "var(--bg-card)" }}>
                                 {TIMEFRAMES.map((tf) => (
                                     <button
                                         key={tf}
@@ -176,7 +136,7 @@ export default function AccountPage() {
                         </div>
                     </div>
 
-                    {/* Right: Action Buttons — desktop only */}
+                    {/* Action buttons — desktop */}
                     <div className="hidden md:flex flex-col gap-3 w-52 pt-14">
                         <button
                             className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
@@ -184,9 +144,7 @@ export default function AccountPage() {
                             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
                             onClick={() => router.push(
-                                account.type === "INVESTMENT"
-                                    ? "/dashboard/addInvestment"
-                                    : "/dashboard/addTransaction"
+                                account.type === "INVESTMENT" ? "/dashboard/addInvestment" : "/dashboard/addTransaction"
                             )}
                         >
                             {account.type === "INVESTMENT" ? "+ Add Investment" : "+ Add Transaction"}
@@ -194,123 +152,136 @@ export default function AccountPage() {
                     </div>
                 </div>
 
-                {/* Transactions */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                    <h1 className="text-2xl font-semibold mb-4 pt-4">
-                        {account.type !== "INVESTMENT" ? "Recent Activity" : "Holdings"}
-                    </h1>
-                </div>
+                {/* Section heading */}
+                <h2 className="text-base font-semibold mb-4">
+                    {account.type !== "INVESTMENT" ? "Recent Activity" : "Holdings"}
+                </h2>
 
-                {isLoading ? (
-                    <p>Loading...</p>
-                ) : account.type !== "INVESTMENT" ? (
-                    <div className="space-y-4">
-                        {transactions.map((tx) => (
-                            <div key={tx.id} className="p-4 rounded-2xl flex justify-between" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                                <div>
-                                    <p className="font-medium text-xl">{tx.description}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {tx.date}
-                                    </p>
-                                    <p className="text-lg font-bold" style={{ color: parseFloat(tx.amount.toString()) > 0 ? "var(--positive)" : "var(--negative)" }}>
-                                        {parseFloat(tx.amount.toString()) > 0 ? "+ $" : "- $"}{Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}
-                                    </p>
+                {/* Transactions list */}
+                {account.type !== "INVESTMENT" ? (
+                    <div className="space-y-2">
+                        {transactions.map((tx) => {
+                            const amount = parseFloat(tx.amount.toString());
+                            const isPositive = amount > 0;
+                            return (
+                                <div
+                                    key={tx.id}
+                                    className="p-4 rounded-2xl flex items-center justify-between gap-4"
+                                    style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                                >
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate">{tx.description}</p>
+                                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{tx.date}</span>
+                                            {tx.category && (
+                                                <span
+                                                    className="px-2 py-0.5 text-xs rounded-full"
+                                                    style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}
+                                                >
+                                                    {tx.category.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <p
+                                            className="text-base font-semibold mr-2"
+                                            style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}
+                                        >
+                                            {isPositive ? "+" : "−"}{formatCurrency(Math.abs(amount))}
+                                        </p>
+                                        <button
+                                            className="p-2 rounded-lg transition-all duration-150"
+                                            style={{ color: "var(--text-muted)" }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                            onClick={() => router.push(`/dashboard/editTransaction/${tx.id}`)}
+                                        >
+                                            <PencilIcon className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            className="p-2 rounded-lg transition-all duration-150"
+                                            style={{ color: "var(--negative)" }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ff4d4d18")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                            onClick={(e) => { e.stopPropagation(); setDeletingTransaction(tx); }}
+                                        >
+                                            <Trash2Icon className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    {tx.category && <span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
-                                        {tx.category.name}
-                                    </span>}
-
-                                    <button
-
-                                        className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
-                                        onClick={() => router.push(`/dashboard/editTransaction/${tx.id}`)}
-                                    >
-                                        <PencilIcon className="w-5 h-5 text-gray-800 dark:text-gray-200" />
-                                    </button>
-                                    <button
-
-                                        className="relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setDeletingTransaction(tx);
-                                        }}
-                                    >
-                                        <Trash2Icon className="w-5 h-5 text-red-800 dark:text-red-800" />
-                                    </button>
-                                    <DeleteConfirmation
-                                        isOpen={!!deletingTransaction}
-                                        onCancel={() => setDeletingTransaction(null)}
-                                        onConfirm={() => {
-                                            if (deletingTransaction) {
-                                                handleDeleteTransaction(deletingTransaction.id);
-                                                setDeletingTransaction(null);
-                                            }
-                                        }}
-                                        itemName={`transaction "${deletingTransaction?.description}"`}
-                                    />
-
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
+                        <DeleteConfirmation
+                            isOpen={!!deletingTransaction}
+                            onCancel={() => setDeletingTransaction(null)}
+                            onConfirm={() => {
+                                if (deletingTransaction) {
+                                    handleDeleteTransaction(deletingTransaction.id);
+                                    setDeletingTransaction(null);
+                                }
+                            }}
+                            itemName={`transaction "${deletingTransaction?.description}"`}
+                        />
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {investments.map((inv) => (
-                            <div key={inv.id} className="p-4 rounded-2xl flex justify-between" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                                <div>
-                                    <p className="font-medium text-xl">{inv.name}</p>
-                                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{inv.date}</p>
-                                    <p className="text-lg font-bold">{inv.quantity.toString()} units @ {formatCurrency(parseFloat(inv.purchasePrice.toString()))}</p>
-                                </div>
-
-                                <div className="flex flex-col justify-center space-y-2">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-xl font-medium text-white-600">
-                                            $1420.03
-                                        </span>
-
-                                        <span className="text-sm text-green-600">
-                                            + $300.23 (+12.33%)
-                                        </span>
+                    <div className="space-y-2">
+                        {investments.map((inv) => {
+                            const costBasis = parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString());
+                            return (
+                                <div
+                                    key={inv.id}
+                                    className="p-4 rounded-2xl flex items-center justify-between gap-4"
+                                    style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                                >
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm">{inv.name}</p>
+                                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{inv.date}</p>
+                                        <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                                            {inv.quantity.toString()} units @ {formatCurrency(parseFloat(inv.purchasePrice.toString()))}
+                                        </p>
                                     </div>
-                                    <div className="flex justify-end items-center space-x-2">
-
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <div className="text-right mr-2">
+                                            <p className="text-base font-semibold">{formatCurrency(costBasis)}</p>
+                                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>cost basis</p>
+                                        </div>
                                         <button
-                                            className="relative px-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
+                                            className="p-2 rounded-lg transition-all duration-150"
+                                            style={{ color: "var(--text-muted)" }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                                             onClick={() => router.push(`/dashboard/editInvestment/${inv.id}`)}
                                         >
-                                            <PencilIcon className="w-4 h-4 text-gray-800 dark:text-gray-200" />
+                                            <PencilIcon className="w-4 h-4" />
                                         </button>
                                         <button
-                                            className="relative px-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setDeletingInvestment(inv);
-                                            }}
+                                            className="p-2 rounded-lg transition-all duration-150"
+                                            style={{ color: "var(--negative)" }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ff4d4d18")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                            onClick={(e) => { e.stopPropagation(); setDeletingInvestment(inv); }}
                                         >
-                                            <Trash2Icon className="w-4 h-4 text-red-800" />
+                                            <Trash2Icon className="w-4 h-4" />
                                         </button>
-                                        <DeleteConfirmation
-                                            isOpen={!!deletingInvestment}
-                                            onCancel={() => setDeletingInvestment(null)}
-                                            onConfirm={() => {
-                                                if (deletingInvestment) {
-                                                    handleDeleteInvestment(deletingInvestment.id);
-                                                    setDeletingInvestment(null);
-                                                }
-                                            }}
-                                            itemName={`investment "${deletingInvestment?.name}"`}
-                                        />
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
+                        <DeleteConfirmation
+                            isOpen={!!deletingInvestment}
+                            onCancel={() => setDeletingInvestment(null)}
+                            onConfirm={() => {
+                                if (deletingInvestment) {
+                                    handleDeleteInvestment(deletingInvestment.id);
+                                    setDeletingInvestment(null);
+                                }
+                            }}
+                            itemName={`investment "${deletingInvestment?.name}"`}
+                        />
                     </div>
                 )}
             </main>
-
-
         </div>
     );
 }

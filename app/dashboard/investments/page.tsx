@@ -2,21 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
-import type { Account, Investment, Prisma } from "@/generated/prisma/client";
+import type { Account, Investment } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
-
-type InvestmentWithRelations = Prisma.InvestmentGetPayload<{
-    include: {
-        account: true;
-    }
-}>
-
-
-
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-CA", {
@@ -29,94 +20,71 @@ function formatCurrency(amount: number) {
 export default function Investments() {
     const [timeframe, setTimeframe] = useState("1M");
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [investments, setInvestments] = useState<Investment[]>([])
+    const [investments, setInvestments] = useState<Investment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
     const [deletingInvestment, setDeletingInvestment] = useState<Investment | null>(null);
+    const router = useRouter();
+
+    const netWorth = accounts
+        .filter(a => a.type === "INVESTMENT")
+        .reduce((sum, a) => sum + parseFloat(a.balance.toString()), 0);
 
     const handleDeleteInvestment = async (investmentId: string) => {
         try {
-            await apiFetch(`/api/investments/${investmentId}`, {
-                method: "DELETE"
-            });
-            // Remove the deleted transaction from the state
-            setInvestments(investments.filter(tx => tx.id !== investmentId));
+            await apiFetch(`/api/investments/${investmentId}`, { method: "DELETE" });
+            setInvestments(investments.filter(inv => inv.id !== investmentId));
         } catch (error) {
-            console.error("Error deleting transaction:", error);
+            console.error("Error deleting investment:", error);
         }
     };
 
-    const netWorth = accounts
-        .filter(account => account.type === "INVESTMENT")
-        .reduce((sum, a) => sum + parseFloat(a.balance.toString()), 0);
-
-    const router = useRouter();
-
     useEffect(() => {
-
         const fetchdata = async () => {
-
             try {
-                const fetchedAccounts = await apiFetch("/api/accounts");
-                setAccounts(fetchedAccounts.data);
-
-                const fetchedInvestments = await apiFetch("/api/investments");
-                setInvestments(fetchedInvestments.data);
+                const [accs, invs] = await Promise.all([
+                    apiFetch("/api/accounts"),
+                    apiFetch("/api/investments"),
+                ]);
+                setAccounts(accs.data);
+                setInvestments(invs.data);
+                setIsLoading(false);
+            } catch (error) {
+                console.error("Error fetching data:", error);
                 setIsLoading(false);
             }
-            catch (error) {
-                console.error("Error fetching accounts:", error);
-                setIsLoading(false);
-                return;
-            }
-
         };
-
         fetchdata();
     }, []);
 
     return (
         <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
-
-
-            {/* Main Content */}
             <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8 pb-8">
 
-                {/* Desktop: two-column layout — graph left, actions right */}
+                {/* Header */}
                 <div className="flex flex-col md:flex-row md:gap-8 mb-8">
-
-                    {/* Left: Net Worth + Graph + Timeframe */}
                     <div className="flex-1">
-                        {/* Net Worth */}
-                        <div className="mb-4">
-                            <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
-                                Total Investments
-                            </p>
-                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                                {formatCurrency(netWorth)}
-                            </h1>
-                            <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
-                                +$1,240.50 (5.1%) this month
-                            </p>
-                        </div>
+                        <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>Total Investments</p>
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                            {formatCurrency(netWorth)}
+                        </h1>
+                        <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
+                            +$1,240.50 (5.1%) this month
+                        </p>
 
                         {/* Graph Placeholder */}
                         <div
-                            className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4"
+                            className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4 mt-4"
                             style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
                         >
                             <div className="text-center">
                                 <div className="text-2xl mb-1">📈</div>
-                                <p className="text-sm">Net worth graph coming soon</p>
+                                <p className="text-sm">Portfolio graph coming soon</p>
                             </div>
                         </div>
 
                         {/* Timeframe Selector */}
                         <div className="flex justify-center">
-                            <div
-                                className="inline-flex left-0 right-0 rounded-xl p-1 gap-1"
-                                style={{ backgroundColor: "var(--bg-card)" }}
-                            >
+                            <div className="inline-flex rounded-xl p-1 gap-1" style={{ backgroundColor: "var(--bg-card)" }}>
                                 {TIMEFRAMES.map((tf) => (
                                     <button
                                         key={tf}
@@ -134,13 +102,13 @@ export default function Investments() {
                         </div>
                     </div>
 
-                    {/* Right: Action Buttons — desktop only */}
+                    {/* Action buttons — desktop */}
                     <div className="hidden md:flex flex-col gap-3 w-52 pt-14">
                         <button
                             className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
-                            style={{ backgroundColor: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-card)")}
+                            style={{ backgroundColor: "var(--accent)", color: "#000" }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
                             onClick={() => router.push("/dashboard/addInvestment")}
                         >
                             + Add Investment
@@ -148,21 +116,23 @@ export default function Investments() {
                     </div>
                 </div>
 
-                {/* Account Summary Cards */}
+                {/* Investment account cards */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-base font-semibold">Accounts</h2>
-                        <button className="cursor-pointer text-sm transition" style={{ color: "var(--accent)" }}
+                        <button
+                            className="cursor-pointer text-sm transition"
+                            style={{ color: "var(--accent)" }}
                             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-hover)")}
-                            onClick={() => router.push("/dashboard/accounts")}
                             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--accent)")}
+                            onClick={() => router.push("/dashboard/accounts")}
                         >
                             View all
                         </button>
                     </div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                         {accounts
-                            .filter(account => account.type === "INVESTMENT")
+                            .filter(a => a.type === "INVESTMENT")
                             .map((account) => (
                                 <div
                                     key={account.id}
@@ -187,64 +157,66 @@ export default function Investments() {
                     </div>
                 </div>
 
-
-                {/* Investment holdings */}
-                <div className="space-y-4">
-                    <h2 className="text-base font-semibold">Holdings</h2>
-                        {investments.map((inv) => (
-                            <div key={inv.id} className="p-4 rounded-2xl flex justify-between" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                                <div>
-                                    <p className="font-medium text-xl">{inv.name}</p>
-                                    <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{inv.date}</p>
-                                    <p className="text-lg font-bold">{inv.quantity.toString()} units @ {formatCurrency(parseFloat(inv.purchasePrice.toString()))}</p>
-                                </div>
-
-                                <div className="flex flex-col justify-center space-y-2">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-xl font-medium text-white-600">
-                                            $1420.03
-                                        </span>
-
-                                        <span className="text-sm text-green-600">
-                                            + $300.23 (+12.33%)
-                                        </span>
+                {/* Holdings list */}
+                <div>
+                    <h2 className="text-base font-semibold mb-4">Holdings</h2>
+                    <div className="space-y-2">
+                        {investments.map((inv) => {
+                            const costBasis = parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString());
+                            return (
+                                <div
+                                    key={inv.id}
+                                    className="p-4 rounded-2xl flex items-center justify-between gap-4"
+                                    style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                                >
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm">{inv.name}</p>
+                                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{inv.date}</p>
+                                        <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                                            {inv.quantity.toString()} units @ {formatCurrency(parseFloat(inv.purchasePrice.toString()))}
+                                        </p>
                                     </div>
-                                    <div className="flex justify-end items-center space-x-2">
-
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <div className="text-right mr-2">
+                                            <p className="text-base font-semibold">{formatCurrency(costBasis)}</p>
+                                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>cost basis</p>
+                                        </div>
                                         <button
-                                            className="relative px-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
+                                            className="p-2 rounded-lg transition-all duration-150"
+                                            style={{ color: "var(--text-muted)" }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                                             onClick={() => router.push(`/dashboard/editInvestment/${inv.id}`)}
                                         >
-                                            <PencilIcon className="w-4 h-4 text-gray-800 dark:text-gray-200" />
+                                            <PencilIcon className="w-4 h-4" />
                                         </button>
                                         <button
-                                            className="relative px-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150 hover:scale-105"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setDeletingInvestment(inv);
-                                            }}
+                                            className="p-2 rounded-lg transition-all duration-150"
+                                            style={{ color: "var(--negative)" }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ff4d4d18")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                            onClick={(e) => { e.stopPropagation(); setDeletingInvestment(inv); }}
                                         >
-                                            <Trash2Icon className="w-4 h-4 text-red-800" />
+                                            <Trash2Icon className="w-4 h-4" />
                                         </button>
-                                        <DeleteConfirmation
-                                            isOpen={!!deletingInvestment}
-                                            onCancel={() => setDeletingInvestment(null)}
-                                            onConfirm={() => {
-                                                if (deletingInvestment) {
-                                                    handleDeleteInvestment(deletingInvestment.id);
-                                                    setDeletingInvestment(null);
-                                                }
-                                            }}
-                                            itemName={`investment "${deletingInvestment?.name}"`}
-                                        />
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
+                    <DeleteConfirmation
+                        isOpen={!!deletingInvestment}
+                        onCancel={() => setDeletingInvestment(null)}
+                        onConfirm={() => {
+                            if (deletingInvestment) {
+                                handleDeleteInvestment(deletingInvestment.id);
+                                setDeletingInvestment(null);
+                            }
+                        }}
+                        itemName={`investment "${deletingInvestment?.name}"`}
+                    />
+                </div>
             </main>
-
-
         </div>
     );
 }

@@ -12,6 +12,14 @@ type TransactionWithRelations = Prisma.TransactionGetPayload<{
     };
 }>;
 
+function formatCurrency(amount: number) {
+    return new Intl.NumberFormat("en-CA", {
+        style: "currency",
+        currency: "CAD",
+        minimumFractionDigits: 2,
+    }).format(amount);
+}
+
 export default function Activity() {
     const [transactions, setTransactions] = useState<TransactionWithRelations[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -23,24 +31,21 @@ export default function Activity() {
                 const fetchedTransactions = await apiFetch("/api/transactions");
                 setTransactions(fetchedTransactions.data);
                 setIsLoading(false);
-            }
-            catch (error) {
+            } catch (error) {
                 console.error("Error fetching transactions:", error);
                 setIsLoading(false);
-                return;
             }
         };
-
         fetchdata();
     }, []);
 
     return (
         <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
             <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                    <h1 className="text-2xl font-semibold mb-4 pt-4">Recent Activity</h1>
+                <div className="flex items-center justify-between mb-6">
+                    <h1 className="text-2xl font-bold tracking-tight">Recent Activity</h1>
                     <button
-                        className="px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer"
+                        className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer"
                         style={{ backgroundColor: "var(--accent)", color: "#000" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
@@ -51,31 +56,55 @@ export default function Activity() {
                 </div>
 
                 {isLoading ? (
-                    <p>Loading transactions...</p>
-                ) : (
-                    <div className="space-y-4">
-                        {transactions.map((tx) => (
-                            <div key={tx.id} className="p-4 rounded-2xl flex justify-between" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                                <div>
-                                    <p className="font-medium text-xl">{tx.description}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {tx.date}
-                                    </p>
-                                    <p className="text-lg font-bold" style={{ color: parseFloat(tx.amount.toString()) > 0 ? "var(--positive)" : "var(--negative)" }}>
-                                        {parseFloat(tx.amount.toString()) > 0 ? "+ $" : "- $"}{Math.abs(parseFloat(tx.amount.toString())).toFixed(2)}
-                                    </p>
-                                </div>
-                                <div className="flex flex-col items-end space-y-2">
-                                    <span className="px-2 py-0.5 text-lg rounded-full bg-gray-200 text-gray-800">
-                                        {tx.account.name}
-                                    </span>
-                                    {tx.category && <span className="px-2 py-0.5 text-lg rounded-full bg-blue-100 text-blue-800">
-                                        {tx.category.name}
-                                    </span>
-                                    }
-                                </div>
-                            </div>
+                    <div className="space-y-2">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="h-16 rounded-2xl skeleton" />
                         ))}
+                    </div>
+                ) : transactions.length === 0 ? (
+                    <div className="text-center py-20" style={{ color: "var(--text-muted)" }}>
+                        <p className="text-sm">No transactions yet</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {transactions.map((tx) => {
+                            const amount = parseFloat(tx.amount.toString());
+                            const isPositive = amount > 0;
+                            return (
+                                <div
+                                    key={tx.id}
+                                    className="p-4 rounded-2xl flex items-center justify-between gap-4"
+                                    style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+                                >
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate">{tx.description}</p>
+                                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{tx.date}</span>
+                                            <span
+                                                className="px-2 py-0.5 text-xs rounded-full"
+                                                style={{ backgroundColor: "var(--bg-hover)", color: "var(--text-secondary)" }}
+                                            >
+                                                {tx.account.name}
+                                            </span>
+                                            {tx.category && (
+                                                <span
+                                                    className="px-2 py-0.5 text-xs rounded-full"
+                                                    style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}
+                                                >
+                                                    {tx.category.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p
+                                        className="text-base font-semibold shrink-0"
+                                        style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}
+                                    >
+                                        {isPositive ? "+" : "−"}{formatCurrency(Math.abs(amount))}
+                                    </p>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </main>

@@ -1,227 +1,174 @@
 'use client';
-import type { Account } from "@/generated/prisma/client";
-import type { Category } from "@/generated/prisma/client";
+import type { Account, Category } from "@/generated/prisma/client";
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, Sparkles } from "lucide-react";
 
-export default function addTransaction() {
-    // State for all accounts and categories of the user
+export default function AddTransaction() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    // Controlled inputs
     const [aiInput, setAiInput] = useState("");
     const [accountId, setAccountId] = useState("");
     const [categoryId, setCategoryId] = useState("");
-    const [date, setDate] = useState(() => {
-        const today = new Date();
-        return today.toISOString().split("T")[0]; // "YYYY-MM-DD"
-    });
+    const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
     const [amount, setAmount] = useState("");
     const [name, setName] = useState("");
-    // Handle amount
+
+    const router = useRouter();
 
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value
+        const value = e.target.value;
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
-
         setAmount(value);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-
         e.preventDefault();
-
-        // Check manual fill status
         const manuallyFilled = accountId && date && amount && name;
-        // Check AI fill status
         const aiFilled = aiInput.trim() !== "";
+        if (!manuallyFilled && !aiFilled) return;
 
-        // Validation: require either manual or AI input
-        if (!manuallyFilled && !aiFilled) {
-            //alert("Please fill out either the AI input or all manual fields.");
-            return;
-        }
-
-        // If there is manual input, use that, if not, use AI input
-        // TODO: implement AI parsing logic to extract accountId, categoryId, date, and amount from aiInput
-        const transactionData = manuallyFilled ? { accountId, categoryId, date, amount: parseFloat(amount), name } : { aiInput };
+        const transactionData = manuallyFilled
+            ? { accountId, categoryId, date, amount: parseFloat(amount), name }
+            : { aiInput };
 
         try {
-            const res = await apiFetch("/api/transactions", {
+            await apiFetch("/api/transactions", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(transactionData)
+                body: JSON.stringify(transactionData),
             });
-            setAiInput("");
-            setAccountId("");
-            setCategoryId("");
-            setDate("");
-            setAmount("");
-            setName("");
-        }
-        catch (error) {
+            router.back();
+        } catch (error) {
             console.error("Error submitting transaction:", error);
-
         }
     };
 
     useEffect(() => {
-
         const fetchdata = async () => {
-
             try {
-                const fetchedAccounts = await apiFetch("/api/accounts");
-                setAccounts(fetchedAccounts.data);
-                const fetchedCategories = await apiFetch("/api/categories");
-                setCategories(fetchedCategories.data);
-                setIsLoading(false);
+                const [accs, cats] = await Promise.all([
+                    apiFetch("/api/accounts"),
+                    apiFetch("/api/categories"),
+                ]);
+                setAccounts(accs.data);
+                setCategories(cats.data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
             }
-            catch (error) {
-                console.error("Error fetching accounts or categories:", error);
-                setIsLoading(false);
-                return;
-            }
-
         };
-
         fetchdata();
     }, []);
 
     return (
-        <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
-            <main className="max-w-5xl mx-auto px-4 md:px-8 pt-2">
-                <div className="p-6 rounded-2xl mt-10" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                    <form onSubmit={handleSubmit}>
-                        <h1 className="text-xl font-semibold mb-4 text-center">Add Transaction</h1>
-                        {/* AI Input Field */}
-                        <div>
-                            <label htmlFor="aiInput" className="block text-xl font-medium mb-2 text-center">
-                                AI Input:
-                            </label>
-                            <input
-                                id="aiInput"
-                                type="text"
-                                placeholder="Type something..."
-                                value={aiInput}
-                                onChange={(e) => setAiInput(e.target.value)}
-                                className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
+        <div className="min-h-screen pb-24 md:pb-8" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+            <main className="max-w-md mx-auto px-4 pt-6">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-1 text-sm mb-6 transition-colors duration-150"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                >
+                    <ChevronLeft className="w-4 h-4" /> Back
+                </button>
 
+                <h1 className="text-2xl font-bold tracking-tight mb-6">Add Transaction</h1>
 
+                <form onSubmit={handleSubmit}>
+                    {/* AI Input */}
+                    <div className="p-4 rounded-2xl mb-2" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                            <span className="text-sm font-semibold">AI Input</span>
+                            <span
+                                className="text-xs px-1.5 py-0.5 rounded font-medium"
+                                style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}
+                            >
+                                Beta
+                            </span>
                         </div>
-                        <div className="flex items-center my-12">
-                            <hr className="grow border-t border-gray-300" />
-                            <span className="mx-2 text-gray-500 font-medium">OR</span>
-                            <hr className="grow border-t border-gray-300" />
-                        </div>
-                        {/* Manual Input Fields */}
-                        <div className="mt-6">
-                            <p className="block text-xl font-medium mb-2 text-center">
-                                Manual:
-                            </p>
+                        <input
+                            className="w-full"
+                            id="aiInput"
+                            type="text"
+                            placeholder="e.g. Spent $45 on groceries at Loblaws today"
+                            value={aiInput}
+                            onChange={(e) => setAiInput(e.target.value)}
+                        />
+                    </div>
 
-                            {/* Name Input */}
-                            <div className="mb-4">
-                                <label htmlFor="amount" className="block text-lg font-medium mb-2">
-                                    Name:
-                                </label>
-                                <input
-                                    id="amount"
-                                    type="string"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Enter name..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
-                            {/* Account Dropdown */}
-                            <div className="mb-4">
-                                <label htmlFor="account" className="block text-lg font-medium mb-2">
-                                    Account:
-                                </label>
-                                <select
-                                    id="account"
-                                    value={accountId}
-                                    onChange={(e) => setAccountId(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
-                                >
-                                    <option value="" className="">Select an account</option>
-                                    {accounts
-                                        .filter(account => account.type !== "INVESTMENT")
-                                        .map((account) => (
-                                            <option key={account.id} value={account.id}>
-                                                {account.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
+                    {/* OR divider */}
+                    <div className="flex items-center gap-3 my-6">
+                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border)" }} />
+                        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>or</span>
+                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border)" }} />
+                    </div>
 
-                            {/* Category Dropdown */}
-                            <div className="mb-4">
-                                <label htmlFor="category" className="block text-lg font-medium mb-2">
-                                    Category:
-                                </label>
-                                <select
-                                    id="category"
-                                    value={categoryId}
-                                    onChange={(e) => setCategoryId(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
-                                >
-                                    <option value="">Select a category</option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                    {/* Manual fields */}
+                    <div className="mb-4">
+                        <label htmlFor="name" className="field-label">Name: </label>
+                        <input
+                            id="name"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g. Grocery Run"
+                        />
+                    </div>
 
-                            {/* Date Input */}
-                            <div className="mb-4">
-                                <label htmlFor="date" className="block text-lg font-medium mb-2">
-                                    Date:
-                                </label>
-                                <input
-                                    id="date"
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="account" className="field-label">Account: </label>
+                        <select id="account" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                            <option value="">Select an account</option>
+                            {accounts
+                                .filter(a => a.type !== "INVESTMENT")
+                                .map((a) => (
+                                    <option key={a.id} value={a.id}>{a.name}</option>
+                                ))}
+                        </select>
+                    </div>
 
-                            {/* Amount Input */}
-                            <div className="mb-4">
-                                <label htmlFor="amount" className="block text-lg font-medium mb-2">
-                                    Amount:
-                                </label>
-                                <input
-                                    id="amount"
-                                    type="number"
-                                    value={amount}
-                                    onChange={handleAmountChange}
-                                    placeholder="Enter amount..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="category" className="field-label">
+                            Category: <span style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>(optional)</span>
+                        </label>
+                        <select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                            <option value="">No category</option>
+                            {categories.map((c) => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    </div>
 
-                            {/* Submit Button */}
-                            <div className="mt-6">
-                                <button
-                                    type="submit"
-                                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
-                                    style={{ backgroundColor: "var(--accent)", color: "#000" }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
-                                >
-                                    Add Transaction
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                    <div className="mb-4">
+                        <label htmlFor="date" className="field-label">Date: </label>
+                        <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
+
+                    <div className="mb-6">
+                        <label htmlFor="amount" className="field-label">Amount: </label>
+                        <input
+                            id="amount"
+                            type="number"
+                            value={amount}
+                            onChange={handleAmountChange}
+                            placeholder="0.00"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+                        style={{ backgroundColor: "var(--accent)", color: "#000" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
+                    >
+                        Add Transaction
+                    </button>
+                </form>
             </main>
         </div>
     );

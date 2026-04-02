@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from "react";
-
 interface DeleteConfirmationProps {
   isOpen: boolean;
   onCancel: () => void;
@@ -13,27 +11,36 @@ export function DeleteConfirmation({ isOpen, onCancel, onConfirm, itemName }: De
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-96 shadow-lg text-center">
-        <p className="text-lg font-medium mb-4 text-gray-900 dark:text-gray-100">
-          {`Are you sure you want to delete ${itemName || "this item"}?`}
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ backgroundColor: "rgba(0,0,0,0.65)" }}
+    >
+      <div
+        className="rounded-2xl p-6 w-80 shadow-2xl text-center"
+        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--text-muted)" }}>
+          Confirm deletion
         </p>
-        <div className="flex justify-center gap-4 mt-4">
+        <p className="text-base font-semibold mb-6" style={{ color: "var(--text-primary)" }}>
+          {`Delete ${itemName || "this item"}?`}
+        </p>
+        <div className="flex gap-3">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCancel();
-            }}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            onClick={(e) => { e.stopPropagation(); onCancel(); }}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150"
+            style={{ backgroundColor: "var(--bg-hover)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-secondary)")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
           >
             Cancel
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onConfirm();
-            }}
-            className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+            onClick={(e) => { e.stopPropagation(); onConfirm(); }}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150"
+            style={{ backgroundColor: "var(--negative)", color: "#fff" }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#d93030")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--negative)")}
           >
             Delete
           </button>

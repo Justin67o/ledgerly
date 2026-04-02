@@ -2,226 +2,169 @@
 import type { Account } from "@/generated/prisma/client";
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, Sparkles } from "lucide-react";
 
-export default function addInvestment() {
-    // State for all accounts and categories of the user
+export default function AddInvestment() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    // Controlled inputs
     const [aiInput, setAiInput] = useState("");
     const [accountId, setAccountId] = useState("");
-    const [date, setDate] = useState(() => {
-        const today = new Date();
-        return today.toISOString().split("T")[0]; // "YYYY-MM-DD"
-    });
+    const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
     const [purchasePrice, setPurchasePrice] = useState("");
     const [quantity, setQuantity] = useState("");
     const [name, setName] = useState("");
-    // Handle amount
+    const router = useRouter();
 
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value
+        const value = e.target.value;
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
-
         setQuantity(value);
     };
 
     const handlePurchasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value
+        const value = e.target.value;
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
-
         setPurchasePrice(value);
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-
+    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
-
-        // Check manual fill status
         const manuallyFilled = accountId && date && purchasePrice && name && quantity;
-        // Check AI fill status
         const aiFilled = aiInput.trim() !== "";
+        if (!manuallyFilled && !aiFilled) return;
 
-        // Validation: require either manual or AI input
-        if (!manuallyFilled && !aiFilled) {
-            //alert("Please fill out either the AI input or all manual fields.");
-            return;
-        }
-
-        // If there is manual input, use that, if not, use AI input
-        // TODO: implement AI parsing logic to extract accountId, categoryId, date, and amount from aiInput
-        const investmentData = manuallyFilled ? { accountId, date, quantity: parseFloat(quantity), purchasePrice: parseFloat(purchasePrice), name } : { aiInput };
+        const investmentData = manuallyFilled
+            ? { accountId, date, quantity: parseFloat(quantity), purchasePrice: parseFloat(purchasePrice), name }
+            : { aiInput };
 
         try {
-            const res = await apiFetch("/api/investments", {
+            await apiFetch("/api/investments", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(investmentData)
+                body: JSON.stringify(investmentData),
             });
-            setAiInput("");
-            setAccountId("");
-            setQuantity("");
-            setDate("");
-            setPurchasePrice("");
-            setName("");
-        }
-        catch (error) {
+            router.back();
+        } catch (error) {
             console.error("Error submitting investment:", error);
-
         }
     };
 
     useEffect(() => {
-
         const fetchdata = async () => {
-
             try {
-                const fetchedAccounts = await apiFetch("/api/accounts");
-                setAccounts(fetchedAccounts.data);
-
-                setIsLoading(false);
+                const accs = await apiFetch("/api/accounts");
+                setAccounts(accs.data);
+            } catch (error) {
+                console.error("Error fetching accounts:", error);
             }
-            catch (error) {
-                console.error("Error fetching accounts: ", error);
-                setIsLoading(false);
-                return;
-            }
-
         };
-
         fetchdata();
     }, []);
 
     return (
-        <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
-            <main className="max-w-5xl mx-auto px-4 md:px-8 pt-2">
-                <div className="p-6 rounded-2xl mt-10" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                    <form onSubmit={handleSubmit}>
-                        <h1 className="text-xl font-semibold mb-4 text-center">Add Investment</h1>
-                        {/* AI Input Field */}
-                        <div>
-                            <label htmlFor="aiInput" className="block text-xl font-medium mb-2 text-center">
-                                AI Input:
-                            </label>
-                            <input
-                                id="aiInput"
-                                type="text"
-                                placeholder="Type something..."
-                                value={aiInput}
-                                onChange={(e) => setAiInput(e.target.value)}
-                                className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            />
+        <div className="min-h-screen pb-24 md:pb-8" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+            <main className="max-w-md mx-auto px-4 pt-6">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-1 text-sm mb-6 transition-colors duration-150"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                >
+                    <ChevronLeft className="w-4 h-4" /> Back
+                </button>
 
+                <h1 className="text-2xl font-bold tracking-tight mb-6">Add Investment</h1>
 
+                <form onSubmit={handleSubmit}>
+                    {/* AI Input */}
+                    <div className="p-4 rounded-2xl mb-2" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                            <span className="text-sm font-semibold">AI Input</span>
+                            <span
+                                className="text-xs px-1.5 py-0.5 rounded font-medium"
+                                style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}
+                            >
+                                Beta
+                            </span>
                         </div>
-                        <div className="flex items-center my-12">
-                            <hr className="grow border-t border-gray-300" />
-                            <span className="mx-2 text-gray-500 font-medium">OR</span>
-                            <hr className="grow border-t border-gray-300" />
-                        </div>
-                        {/* Manual Input Fields */}
-                        <div className="mt-6">
-                            <p className="block text-xl font-medium mb-2 text-center">
-                                Manual:
-                            </p>
+                        <input
+                            id="aiInput"
+                            type="text"
+                            placeholder="e.g. Bought 5 shares of AAPL at $195 today"
+                            value={aiInput}
+                            onChange={(e) => setAiInput(e.target.value)}
+                        />
+                    </div>
 
-                            {/* Ticker Input */}
-                            <div className="mb-4">
-                                <label htmlFor="ticker" className="block text-lg font-medium mb-2">
-                                    Ticker:
-                                </label>
-                                <input
-                                    id="ticker"
-                                    type="string"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Enter ticker..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
-                            {/* Account Dropdown */}
-                            <div className="mb-4">
-                                <label htmlFor="account" className="block text-lg font-medium mb-2">
-                                    Account:
-                                </label>
-                                <select
-                                    id="account"
-                                    value={accountId}
-                                    onChange={(e) => setAccountId(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
-                                >
-                                    <option value="" className="">Select an account</option>
-                                    {accounts
-                                        .filter(account => account.type === "INVESTMENT")
-                                        .map((account) => (
-                                            <option key={account.id} value={account.id}>
-                                                {account.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
+                    {/* OR divider */}
+                    <div className="flex items-center gap-3 my-6">
+                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border)" }} />
+                        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>or</span>
+                        <div className="flex-1 h-px" style={{ backgroundColor: "var(--border)" }} />
+                    </div>
 
+                    <div className="mb-4">
+                        <label htmlFor="ticker" className="field-label">Ticker</label>
+                        <input
+                            id="ticker"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g. AAPL"
+                        />
+                    </div>
 
-                            {/* Date Input */}
-                            <div className="mb-4">
-                                <label htmlFor="date" className="block text-lg font-medium mb-2">
-                                    Date:
-                                </label>
-                                <input
-                                    id="date"
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="account" className="field-label">Account</label>
+                        <select id="account" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                            <option value="">Select an account</option>
+                            {accounts
+                                .filter(a => a.type === "INVESTMENT")
+                                .map((a) => (
+                                    <option key={a.id} value={a.id}>{a.name}</option>
+                                ))}
+                        </select>
+                    </div>
 
-                            {/* Purchase Price Input */}
-                            <div className="mb-4">
-                                <label htmlFor="purchasePrice" className="block text-lg font-medium mb-2">
-                                    Purchase Price:
-                                </label>
-                                <input
-                                    id="purchasePrice"
-                                    type="number"
-                                    value={purchasePrice}
-                                    onChange={handlePurchasePriceChange}
-                                    placeholder="Enter purchase price..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="date" className="field-label">Purchase Date</label>
+                        <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
 
-                            {/* Quantity Input */}
-                            <div className="mb-4">
-                                <label htmlFor="quantity" className="block text-lg font-medium mb-2">
-                                    Quantity:
-                                </label>
-                                <input
-                                    id="quantity"
-                                    type="number"
-                                    value={quantity}
-                                    onChange={handleQuantityChange}
-                                    placeholder="Enter quantity..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="purchasePrice" className="field-label">Purchase Price per Unit</label>
+                        <input
+                            id="purchasePrice"
+                            type="number"
+                            value={purchasePrice}
+                            onChange={handlePurchasePriceChange}
+                            placeholder="0.00"
+                        />
+                    </div>
 
-                            {/* Submit Button */}
-                            <div className="mt-6">
-                                <button
-                                    type="submit"
-                                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
-                                    style={{ backgroundColor: "var(--accent)", color: "#000" }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
-                                >
-                                    Add Investment
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                    <div className="mb-6">
+                        <label htmlFor="quantity" className="field-label">Quantity</label>
+                        <input
+                            id="quantity"
+                            type="number"
+                            value={quantity}
+                            onChange={handleQuantityChange}
+                            placeholder="0"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+                        style={{ backgroundColor: "var(--accent)", color: "#000" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
+                    >
+                        Add Investment
+                    </button>
+                </form>
             </main>
         </div>
     );

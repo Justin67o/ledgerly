@@ -2,191 +2,138 @@
 import { AccountType } from "@/generated/prisma/enums";
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 
-export default function editAccount() {
-
+export default function EditAccount() {
+    const types = Object.values(AccountType);
+    const params = useParams();
+    const id = params.id;
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
 
-    const types = Object.values(AccountType);
-
-    const params = useParams();
-    const id = params.id; // <-- this is your account id
-
-    // Controlled inputs
     const [type, setType] = useState("");
     const [date, setDate] = useState("");
     const [balance, setBalance] = useState("");
     const [name, setName] = useState("");
-    // Handle balance
 
     const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value
+        const value = e.target.value;
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
-
         setBalance(value);
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-
+    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
-
-        // Check manual fill status
-        let manuallyFilled = type && balance && name && date;
-
-        if (type === "INVESTMENT" && (balance === "" || isNaN(parseFloat(balance)))) {
-            manuallyFilled = type && name;
-        } else {
-            manuallyFilled = type && balance && name && date;
-        }
-
-        // Validation: require either manual input
-        if (!manuallyFilled) {
-            return;
-        }
-
-        // If there is manual input, use that
-        const accountData = { type, date, balance: parseFloat(balance), name };
+        const isInvestment = type === "INVESTMENT";
+        const filled = isInvestment ? (type && name) : (type && balance && name && date);
+        if (!filled) return;
 
         try {
-            const res = await apiFetch(`/api/accounts/${id}`, {
+            await apiFetch(`/api/accounts/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(accountData)
+                body: JSON.stringify({ type, date, balance: parseFloat(balance) || 0, name }),
             });
-
-
-            setType("");
-            setDate("");
-            setBalance("");
-            setName("");
-        }
-        catch (error) {
-            console.error("Error submitting account:", error);
-
+            router.back();
+        } catch (error) {
+            console.error("Error updating account:", error);
         }
     };
 
-
     useEffect(() => {
-
         const fetchdata = async () => {
-
             try {
-
                 const account = await apiFetch(`/api/accounts/${id}`);
                 const { type, dateCreated, balance, name } = account.data;
-
                 setType(type);
                 setDate(dateCreated);
                 setBalance(balance.toString());
                 setName(name);
                 setIsLoading(false);
-            }
-            catch (error) {
-                console.error("Error fetching accounts or categories:", error);
+            } catch (error) {
+                console.error("Error fetching account:", error);
                 setIsLoading(false);
-                return;
             }
-
         };
-
         fetchdata();
     }, []);
 
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
+                <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
-            <main className="max-w-5xl mx-auto px-4 md:px-8 pt-2">
-                <div className="p-6 rounded-2xl mt-10" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                    <form onSubmit={handleSubmit}>
-                        <h1 className="text-xl font-semibold mb-4 text-center">Edit Account</h1>
+        <div className="min-h-screen pb-24 md:pb-8" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+            <main className="max-w-md mx-auto px-4 pt-6">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-1 text-sm mb-6 transition-colors duration-150"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                >
+                    <ChevronLeft className="w-4 h-4" /> Back
+                </button>
 
-                        {/* Manual Input Fields */}
-                        <div className="mt-6">
+                <h1 className="text-2xl font-bold tracking-tight mb-6">Edit Account</h1>
 
-                            {/* Name Input */}
-                            <div className="mb-4">
-                                <label htmlFor="name" className="block text-lg font-medium mb-2">
-                                    Name:
-                                </label>
-                                <input
-                                    id="name"
-                                    type="string"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Enter name..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label htmlFor="name" className="field-label">Account Name</label>
+                        <input
+                            id="name"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g. TD Chequing"
+                        />
+                    </div>
 
-                            {/* Type Dropdown */}
-                            <div className="mb-4">
-                                <label htmlFor="type" className="block text-lg font-medium mb-2">
-                                    Type:
-                                </label>
-                                <select
-                                    id="type"
-                                    value={type}
-                                    onChange={(e) => setType(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
-                                >
-                                    <option value="" className="">Select a type</option>
-                                    {types.map((type) => (
-                                        <option key={type} value={type}>
-                                            {type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="type" className="field-label">Type</label>
+                        <select id="type" value={type} onChange={(e) => setType(e.target.value)}>
+                            <option value="">Select a type</option>
+                            {types.map((t) => (
+                                <option key={t} value={t}>
+                                    {t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                            {/* Balance Input */}
-                            {type !== "INVESTMENT" && (
-                                <div className="mb-4">
-                                    <label htmlFor="balance" className="block text-lg font-medium mb-2">
-                                        Balance:
-                                    </label>
-                                    <input
-                                        id="balance"
-                                        type="number"
-                                        value={balance}
-                                        onChange={handleBalanceChange}
-                                        placeholder="Enter balance..."
-                                        className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    />
-                                </div>
-                            )}
-                            {/* Date Input */}
-                            <div className="mb-4">
-                                <label htmlFor="date" className="block text-lg font-medium mb-2">
-                                    Date:
-                                </label>
-                                <input
-                                    id="date"
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
-
-
-
-                            {/* Submit Button */}
-                            <div className="mt-6">
-                                <button
-                                    type="submit"
-                                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
-                                    style={{ backgroundColor: "var(--accent)", color: "#000" }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
-                                >
-                                    Save Account
-                                </button>
-                            </div>
+                    {type !== "INVESTMENT" && (
+                        <div className="mb-4">
+                            <label htmlFor="balance" className="field-label">Balance</label>
+                            <input
+                                id="balance"
+                                type="number"
+                                value={balance}
+                                onChange={handleBalanceChange}
+                                placeholder="0.00"
+                            />
                         </div>
-                    </form>
-                </div>
+                    )}
+
+                    <div className="mb-6">
+                        <label htmlFor="date" className="field-label">Date Created</label>
+                        <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+                        style={{ backgroundColor: "var(--accent)", color: "#000" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
+                    >
+                        Save Changes
+                    </button>
+                </form>
             </main>
         </div>
     );

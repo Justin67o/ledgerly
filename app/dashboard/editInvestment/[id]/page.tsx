@@ -1,220 +1,164 @@
 'use client';
 import type { Account } from "@/generated/prisma/client";
-import type { Category } from "@/generated/prisma/client";
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 
-
-export default function editInvestment() {
-
+export default function EditInvestment() {
     const params = useParams();
-    const id = params.id; // <-- this is your investment id
+    const id = params.id;
+    const router = useRouter();
 
-    // State for all accounts of the user
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Controlled inputs
-
     const [accountId, setAccountId] = useState("");
-    const [date, setDate] = useState(() => {
-        const today = new Date();
-        return today.toISOString().split("T")[0]; // "YYYY-MM-DD"
-    });
+    const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
     const [purchasePrice, setPurchasePrice] = useState("");
     const [quantity, setQuantity] = useState("");
     const [name, setName] = useState("");
-    // Handle amount
 
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value
+        const value = e.target.value;
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
-
         setQuantity(value);
     };
 
     const handlePurchasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value
+        const value = e.target.value;
         if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
-
         setPurchasePrice(value);
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-
+    const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
-
-        // Check manual fill status
-        const manuallyFilled = accountId && date && purchasePrice && name && quantity;
-
-
-        // Validation: require either manual or AI input
-        if (!manuallyFilled) {
-            //alert("Please fill out either the AI input or all manual fields.");
-            return;
-        }
-
-        // If there is manual input, use that, if not, use AI input
-        // TODO: implement AI parsing logic to extract accountId, categoryId, date, and amount from aiInput
-        const investmentData = { accountId, date, quantity: parseFloat(quantity), purchasePrice: parseFloat(purchasePrice), name };
+        if (!accountId || !date || !purchasePrice || !name || !quantity) return;
 
         try {
-            const res = await apiFetch(`/api/investments/${id}`, {
+            await apiFetch(`/api/investments/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(investmentData)
+                body: JSON.stringify({
+                    accountId, date,
+                    quantity: parseFloat(quantity),
+                    purchasePrice: parseFloat(purchasePrice),
+                    name,
+                }),
             });
-            setAccountId("");
-            setQuantity("");
-            setDate("");
-            setPurchasePrice("");
-            setName("");
-        }
-        catch (error) {
-            console.error("Error submitting investment:", error);
-
+            router.back();
+        } catch (error) {
+            console.error("Error updating investment:", error);
         }
     };
 
     useEffect(() => {
-
         const fetchdata = async () => {
-
             try {
-                const investment = await apiFetch(`/api/investments/${id}`);
-                const { accountId, date, quantity, name, purchasePrice } = investment.data;
-
-
-                setAccountId(accountId)
+                const [inv, accs] = await Promise.all([
+                    apiFetch(`/api/investments/${id}`),
+                    apiFetch("/api/accounts"),
+                ]);
+                const { accountId, date, quantity, name, purchasePrice } = inv.data;
+                setAccountId(accountId);
                 setDate(date);
-                setQuantity(quantity);
+                setQuantity(quantity.toString());
                 setName(name);
-                setPurchasePrice(purchasePrice);
-
-                const fetchedAccounts = await apiFetch(`/api/accounts`);
-                setAccounts(fetchedAccounts.data);
-
-                
+                setPurchasePrice(purchasePrice.toString());
+                setAccounts(accs.data);
+                setIsLoading(false);
+            } catch (error) {
+                console.error("Error fetching data:", error);
                 setIsLoading(false);
             }
-            catch (error) {
-                console.error("Error fetching data: ", error);
-                setIsLoading(false);
-                return;
-            }
-
         };
-
         fetchdata();
     }, []);
 
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
+                <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
-            <main className="max-w-5xl mx-auto px-4 md:px-8 pt-2">
-                <div className="p-6 rounded-2xl mt-10" style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                    <form onSubmit={handleSubmit}>
-                        <h1 className="text-xl font-semibold mb-4 text-center">Edit Investment</h1>
-                        
- 
-                        <div className="mt-6">
+        <div className="min-h-screen pb-24 md:pb-8" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+            <main className="max-w-md mx-auto px-4 pt-6">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-1 text-sm mb-6 transition-colors duration-150"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                >
+                    <ChevronLeft className="w-4 h-4" /> Back
+                </button>
 
-                            {/* Ticker Input */}
-                            <div className="mb-4">
-                                <label htmlFor="ticker" className="block text-lg font-medium mb-2">
-                                    Ticker:
-                                </label>
-                                <input
-                                    id="ticker"
-                                    type="string"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Enter ticker..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
-                            {/* Account Dropdown */}
-                            <div className="mb-4">
-                                <label htmlFor="account" className="block text-lg font-medium mb-2">
-                                    Account:
-                                </label>
-                                <select
-                                    id="account"
-                                    value={accountId}
-                                    onChange={(e) => setAccountId(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-black"
-                                >
-                                    <option value="" className="">Select an account</option>
-                                    {accounts
-                                        .filter(account => account.type === "INVESTMENT")
-                                        .map((account) => (
-                                            <option key={account.id} value={account.id}>
-                                                {account.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
+                <h1 className="text-2xl font-bold tracking-tight mb-6">Edit Investment</h1>
 
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label htmlFor="ticker" className="field-label">Ticker</label>
+                        <input
+                            id="ticker"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g. AAPL"
+                        />
+                    </div>
 
-                            {/* Date Input */}
-                            <div className="mb-4">
-                                <label htmlFor="date" className="block text-lg font-medium mb-2">
-                                    Date:
-                                </label>
-                                <input
-                                    id="date"
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="account" className="field-label">Account</label>
+                        <select id="account" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                            <option value="">Select an account</option>
+                            {accounts
+                                .filter(a => a.type === "INVESTMENT")
+                                .map((a) => (
+                                    <option key={a.id} value={a.id}>{a.name}</option>
+                                ))}
+                        </select>
+                    </div>
 
-                            {/* Purchase Price Input */}
-                            <div className="mb-4">
-                                <label htmlFor="purchasePrice" className="block text-lg font-medium mb-2">
-                                    Purchase Price:
-                                </label>
-                                <input
-                                    id="purchasePrice"
-                                    type="number"
-                                    value={purchasePrice}
-                                    onChange={handlePurchasePriceChange}
-                                    placeholder="Enter purchase price..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="date" className="field-label">Purchase Date</label>
+                        <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
 
-                            {/* Quantity Input */}
-                            <div className="mb-4">
-                                <label htmlFor="quantity" className="block text-lg font-medium mb-2">
-                                    Quantity:
-                                </label>
-                                <input
-                                    id="quantity"
-                                    type="number"
-                                    value={quantity}
-                                    onChange={handleQuantityChange}
-                                    placeholder="Enter quantity..."
-                                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                />
-                            </div>
+                    <div className="mb-4">
+                        <label htmlFor="purchasePrice" className="field-label">Purchase Price per Unit</label>
+                        <input
+                            id="purchasePrice"
+                            type="number"
+                            value={purchasePrice}
+                            onChange={handlePurchasePriceChange}
+                            placeholder="0.00"
+                        />
+                    </div>
 
-                            {/* Submit Button */}
-                            <div className="mt-6">
-                                <button
-                                    type="submit"
-                                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
-                                    style={{ backgroundColor: "var(--accent)", color: "#000" }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
-                                >
-                                    Save Investment
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                    <div className="mb-6">
+                        <label htmlFor="quantity" className="field-label">Quantity</label>
+                        <input
+                            id="quantity"
+                            type="number"
+                            value={quantity}
+                            onChange={handleQuantityChange}
+                            placeholder="0"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-150"
+                        style={{ backgroundColor: "var(--accent)", color: "#000" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--accent-hover)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--accent)")}
+                    >
+                        Save Changes
+                    </button>
+                </form>
             </main>
         </div>
     );
