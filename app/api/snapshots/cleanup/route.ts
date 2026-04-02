@@ -14,12 +14,14 @@ export async function POST(request: Request) {
 
     // Keep only the latest snapshot per date
 
+    const today = new Date().toISOString().split("T")[0]
+    const filteredSnapshots = snapshots.filter(s => s.date < today); // only consider snapshots before, ignore any future-dated snapshots that might exist for some reason
     // Use a Set to track dates already seen and an array to collect IDs of snapshots to delete
     const seen = new Set<string>();
     const toDelete: string[] = [];
 
     // loop through all the user's snapshots from newest to oldest
-    for (const snapshot of snapshots) {
+    for (const snapshot of filteredSnapshots) {
         // If we've already seen a snapshot for this date, mark it for deletion
         if (seen.has(snapshot.date)) {
             // This is a duplicate snapshot for the same date, so we want to delete it, add its ID to the array of snapshots to delete

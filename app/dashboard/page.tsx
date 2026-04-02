@@ -2,12 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
-import type { Account } from "@/generated/prisma/client";
+import type { Account, NetWorthSnapshot } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
+import AreaChartComponent from "@/src/components/areaChart";
+import SimpleAreaChart from "@/src/components/areaChart";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
-
+const days = {
+  "1W": 7,
+  "1M": 30,
+  "3M": 90,
+  "1Y": 365
+};
 
 
 
@@ -20,8 +27,10 @@ function formatCurrency(amount: number) {
 }
 
 export default function Dashboard() {
-  const [timeframe, setTimeframe] = useState("1M");
+  const [timeframe, setTimeframe] = useState("1D");
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [snapshots, setSnapshots] = useState<{ date: string; amount: number; createdAt: Date }[]>([]);
+  const [hoveredData, setHoveredData] = useState<{ date: string; amount: number } | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,18 +39,21 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    
+
     const fetchdata = async () => {
 
       // clean up old snapshots so only the latest one for each date remains, this keeps the graph data clean and prevents it from getting bloated with multiple snapshots per day
       apiFetch("/api/snapshots/cleanup", { method: "POST" });
 
-      try{
-          const fetchedAccounts = await apiFetch("/api/accounts");
-          setAccounts(fetchedAccounts.data);
-          setIsLoading(false);
+      try {
+        const fetchedAccounts = await apiFetch("/api/accounts");
+        setAccounts(fetchedAccounts.data);
+        const fetchedSnapshots = await apiFetch("/api/snapshots");
+        setSnapshots(fetchedSnapshots.data);
+        console.log("Fetched snapshots:", fetchedSnapshots.data);
+        setIsLoading(false);
       }
-      catch(error){
+      catch (error) {
         console.error("Error fetching accounts:", error);
         setIsLoading(false);
         return;
@@ -51,6 +63,30 @@ export default function Dashboard() {
 
     fetchdata();
   }, []);
+
+
+  const filteredSnapshots = snapshots.filter(s => {
+    if (timeframe === "All") return true;
+    if (timeframe === "1D") {
+      const now = new Date().toISOString().split("T")[0];
+      console.log(new Date(s.date).toDateString(), new Date().toDateString());
+      return s.date === now;
+    }
+    const snapshotDate = new Date(s.date);
+    const now = new Date().toISOString().split("T")[0];
+    const latest = new Date();
+    latest.setDate(latest.getDate() - days[timeframe as keyof typeof days]);
+    return s.date >= latest.toISOString().split("T")[0] && s.date <= now;
+  });
+
+  const latestPerDate: { [date: string]: { date: string; amount: number; createdAt: Date } } = {};
+
+  filteredSnapshots.forEach(s => {
+    latestPerDate[s.date] = s;
+  });
+
+  const finalSnapshots = Object.values(latestPerDate)
+
 
   if (isLoading) {
     return (
@@ -96,46 +132,38 @@ export default function Dashboard() {
                 Net Worth
               </p>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                {formatCurrency(netWorth)}
+                {hoveredData ? formatCurrency(hoveredData.amount) : formatCurrency(netWorth)}
               </h1>
-              <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
-                +$1,240.50 (5.1%) this month
+              <p className="text-sm mt-1" style={{ color: hoveredData ? "var(--text-secondary)" : "var(--positive)" }}>
+                {hoveredData ? `${hoveredData.date}` : "+$1,240.50 (5.1%) this month"}
               </p>
             </div>
 
-            {/* Graph Placeholder */}
-            <div
-              className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4"
-              style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
-            >
-              <div className="text-center">
-                <div className="text-2xl mb-1">📈</div>
-                <p className="text-sm">Net worth graph coming soon</p>
-              </div>
-            </div>
+            {/* Graph  */}
+            <SimpleAreaChart data={timeframe !== "1D" ? finalSnapshots : filteredSnapshots} timeframe={timeframe} onHover={setHoveredData} />
 
             {/* Timeframe Selector */}
             <div className="flex justify-center">
-                <div
-                  className="inline-flex left-0 right-0 rounded-xl p-1 gap-1"
-                  style={{ backgroundColor: "var(--bg-card)" }}
-                >
-                  {TIMEFRAMES.map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setTimeframe(tf)}
-                      className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-150"
-                      style={{
-                        backgroundColor: timeframe === tf ? "var(--bg-hover)" : "transparent",
-                        color: timeframe === tf ? "var(--text-primary)" : "var(--text-muted)",
-                      }}
-                    >
-                      {tf}
-                    </button>
-                  ))}
-                </div>
-              </div> 
+              <div
+                className="inline-flex left-0 right-0 rounded-xl p-1 gap-1"
+                style={{ backgroundColor: "var(--bg-card)" }}
+              >
+                {TIMEFRAMES.map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => setTimeframe(tf)}
+                    className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-150"
+                    style={{
+                      backgroundColor: timeframe === tf ? "var(--bg-hover)" : "transparent",
+                      color: timeframe === tf ? "var(--text-primary)" : "var(--text-muted)",
+                    }}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
             </div>
+          </div>
 
           {/* Right: Action Buttons — desktop only */}
           <div className="hidden md:flex flex-col gap-3 w-52 pt-14">
@@ -165,9 +193,9 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold">Accounts</h2>
             <button className="cursor-pointer text-sm transition" style={{ color: "var(--accent)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-hover)")}
-                onClick={() => router.push("/dashboard/accounts")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--accent)")}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-hover)")}
+              onClick={() => router.push("/dashboard/accounts")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--accent)")}
             >
               View all
             </button>
@@ -198,7 +226,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-     
+
     </div>
   );
 }
