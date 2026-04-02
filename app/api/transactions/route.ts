@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   try {
     // Normalize sign based on category type: EXPENSE → always negative, INCOME → always positive
     const rawAmount = Math.abs(parseFloat(data.amount));
-    const normalizedAmount = category?.type === "INCOME" ? rawAmount : -rawAmount;
+    const normalizedAmount = category ? category.type === "INCOME" ? rawAmount : -rawAmount : rawAmount; // if category is missing, just use the raw amount as-is (could be positive or negative based on user input)
 
     console.log("Creating transaction with account ID:", data.accountId, "and category ID:", data.categoryId);
     const transaction = await prisma.transaction.create({

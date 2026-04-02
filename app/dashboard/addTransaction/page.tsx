@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Sparkles } from "lucide-react";
+import { raw } from "@prisma/client/runtime/client";
 
 export default function AddTransaction() {
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -41,7 +42,7 @@ export default function AddTransaction() {
 
         const rawAmount = parseFloat(amount);
         const signedAmount = transactionType === "EXPENSE" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
-
+        console.log(rawAmount, signedAmount);
         const transactionData = manuallyFilled
             ? { accountId, categoryId, date, amount: signedAmount, name }
             : { aiInput };
