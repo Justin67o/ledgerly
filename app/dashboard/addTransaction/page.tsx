@@ -44,7 +44,7 @@ export default function AddTransaction() {
         const signedAmount = transactionType === "EXPENSE" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
         console.log(rawAmount, signedAmount);
         const transactionData = manuallyFilled
-            ? { accountId, categoryId, date, amount: signedAmount, name }
+            ? { accountId, categoryId, date, amount: signedAmount, name, type: transactionType }
             : { aiInput };
 
         const route = manuallyFilled ? "/api/transactions" : "/api/ai/parse-transactions";

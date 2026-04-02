@@ -69,6 +69,7 @@ export async function POST(request: Request) {
         description: data.name,
         date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
         createdAt: data.createdAt ?? new Date(),
+        type: data.type ?? (category ? category.type : "EXPENSE"),
         accountId: account.id,
         categoryId: category?.id ?? null
       }

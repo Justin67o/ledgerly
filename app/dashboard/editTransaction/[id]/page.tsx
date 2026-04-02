@@ -16,6 +16,7 @@ export default function EditTransaction() {
 
     const [accountId, setAccountId] = useState("");
     const [categoryId, setCategoryId] = useState("");
+    const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
     const [date, setDate] = useState("");
     const [amount, setAmount] = useState("");
     const [name, setName] = useState("");
@@ -34,7 +35,7 @@ export default function EditTransaction() {
             await apiFetch(`/api/transactions/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ accountId, categoryId, date, amount: parseFloat(amount), name }),
+                body: JSON.stringify({ accountId, categoryId, date, amount: parseFloat(amount), name, type: transactionType }),
             });
             router.back();
         } catch (error) {
@@ -50,9 +51,10 @@ export default function EditTransaction() {
                     apiFetch("/api/accounts"),
                     apiFetch("/api/categories"),
                 ]);
-                const { accountId, categoryId, date, amount, description } = tx.data;
+                const { accountId, categoryId, date, amount, description, type } = tx.data;
                 setAccountId(accountId);
                 setCategoryId(categoryId ?? "");
+                setTransactionType(type ?? "EXPENSE");
                 setDate(date);
                 setAmount(amount.toString());
                 setName(description);
@@ -134,6 +136,27 @@ export default function EditTransaction() {
                                 <option key={c.id} value={c.id}>{c.name}</option>
                             ))}
                         </select>
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="field-label">Type</label>
+                        <div className="flex gap-2 mt-1">
+                            {(["EXPENSE", "INCOME"] as const).map(t => (
+                                <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => setTransactionType(t)}
+                                    className="px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-100"
+                                    style={{
+                                        backgroundColor: transactionType === t ? (t === "EXPENSE" ? "var(--negative)" : "var(--accent)") : "var(--bg-hover)",
+                                        color: transactionType === t ? "#000" : "var(--text-muted)",
+                                        border: "1px solid transparent",
+                                    }}
+                                >
+                                    {t.charAt(0) + t.slice(1).toLowerCase()}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="mb-4">

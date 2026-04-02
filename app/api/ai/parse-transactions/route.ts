@@ -74,6 +74,7 @@ export async function POST(request: Request) {
                 description: parsed.description,
                 amount: parsed.amount,
                 date: parsed.date,
+                type: parsed.type ?? "EXPENSE",
                 accountId: account.id,
                 categoryId: category?.id ?? undefined,
             }

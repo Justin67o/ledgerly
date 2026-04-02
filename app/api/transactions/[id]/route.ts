@@ -51,6 +51,7 @@ export async function PUT(request: Request,
                 ...(data.description && { description: data.description }),
                 ...(data.date && { date: data.date }),
                 ...(data.accountId && { accountId: data.accountId }),
+                ...(data.type && { type: data.type }),
                 categoryId: category?.id ?? null,
             }
         });
