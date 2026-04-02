@@ -12,15 +12,24 @@ export default function AddTransaction() {
     const [aiInput, setAiInput] = useState("");
     const [accountId, setAccountId] = useState("");
     const [categoryId, setCategoryId] = useState("");
+    const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
     const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
     const [amount, setAmount] = useState("");
     const [name, setName] = useState("");
 
     const router = useRouter();
 
+    const handleCategoryChange = (id: string) => {
+        setCategoryId(id);
+        if (id) {
+            const cat = categories.find(c => c.id === id);
+            if (cat) setTransactionType(cat.type as "EXPENSE" | "INCOME");
+        }
+    };
+
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
+        const value = e.target.value.replace(/^-/, "");
+        if (!/^\d*\.?\d{0,2}$/.test(value)) return;
         setAmount(value);
     };
 
@@ -30,8 +39,11 @@ export default function AddTransaction() {
         const aiFilled = aiInput.trim() !== "";
         if (!manuallyFilled && !aiFilled) return;
 
+        const rawAmount = parseFloat(amount);
+        const signedAmount = transactionType === "EXPENSE" ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
         const transactionData = manuallyFilled
-            ? { accountId, categoryId, date, amount: parseFloat(amount), name }
+            ? { accountId, categoryId, date, amount: signedAmount, name }
             : { aiInput };
 
         try {
@@ -135,7 +147,7 @@ export default function AddTransaction() {
                         <label htmlFor="category" className="field-label">
                             Category: <span style={{ color: "var(--text-muted)", textTransform: "none", letterSpacing: 0 }}>(optional)</span>
                         </label>
-                        <select id="category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                        <select id="category" value={categoryId} onChange={(e) => handleCategoryChange(e.target.value)}>
                             <option value="">No category</option>
                             {categories.map((c) => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -146,6 +158,27 @@ export default function AddTransaction() {
                     <div className="mb-4">
                         <label htmlFor="date" className="field-label">Date: </label>
                         <input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="field-label">Type: </label>
+                        <div className="flex gap-2 mt-1">
+                            {(["EXPENSE", "INCOME"] as const).map(t => (
+                                <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => setTransactionType(t)}
+                                    className="px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-100"
+                                    style={{
+                                        backgroundColor: transactionType === t ? (t === "EXPENSE" ? "var(--negative)" : "var(--accent)") : "var(--bg-hover)",
+                                        color: transactionType === t ? "#000" : "var(--text-muted)",
+                                        border: "1px solid transparent",
+                                    }}
+                                >
+                                    {t.charAt(0) + t.slice(1).toLowerCase()}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="mb-6">
