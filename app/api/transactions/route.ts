@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { Prisma } from "@/generated/prisma/client";
 import { request } from "https";
+import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
 
 //TODO: add authentication and authorization to ensure users can only access their own accounts
 // get all existing accounts for user
@@ -18,9 +19,10 @@ export async function GET(request: Request) {
   try {
 
     const userTransactions = await prisma.transaction.findMany({
-      where: { 
+      where: {
         accountId: accountId || undefined, // if accountId is provided, filter by it; otherwise, get all transactions for the user
-        account: { userId: user.id } },
+        account: { userId: user.id }
+      },
       include: { account: true, category: true },
     });
     return NextResponse.json({ message: 'Transactions retrieved successfully', data: userTransactions }, { status: 200 });
@@ -76,14 +78,14 @@ export async function POST(request: Request) {
 
     await prisma.account.update({
       where: { id: account.id },
-      data:{
+      data: {
         balance: {
           increment: normalizedAmount
         }
-      } 
+      }
     })
 
-
+    createNetWorthSnapshot(user.id);
     return NextResponse.json({ message: 'Transaction created successfully', data: transaction }, { status: 201 });
   } catch (error) {
     if (error instanceof Error) {

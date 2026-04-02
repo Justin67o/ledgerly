@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { Prisma } from "@/generated/prisma/client";
+import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
 
 export async function GET() {
     const user = await requireAuthentication();
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
             }
         })
 
+        createNetWorthSnapshot(user.id);
         return NextResponse.json({ message: 'Account created successfully', data: account }, { status: 201 });
     } catch (error) {
         if (error instanceof Error) {

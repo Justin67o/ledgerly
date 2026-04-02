@@ -33,6 +33,9 @@ export default function Dashboard() {
     
     const fetchdata = async () => {
 
+      // clean up old snapshots so only the latest one for each date remains, this keeps the graph data clean and prevents it from getting bloated with multiple snapshots per day
+      apiFetch("/api/snapshots/cleanup", { method: "POST" });
+
       try{
           const fetchedAccounts = await apiFetch("/api/accounts");
           setAccounts(fetchedAccounts.data);

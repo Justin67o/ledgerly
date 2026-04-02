@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { trace } from "console";
+import { create } from "domain";
+import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
 
 // update one specific existing transaction by id
 
@@ -58,6 +60,7 @@ export async function PUT(request: Request,
             data: { balance: { increment: data.amount }}
         });
 
+        createNetWorthSnapshot(user.id);
         console.log("Updated transaction:", updatedTransaction);
         return NextResponse.json({ message: 'Transaction updated successfully', data: updatedTransaction }, { status: 200 });
     } catch (error) {
@@ -96,6 +99,8 @@ export async function DELETE(
             where: { id: id },
         });
 
+
+        createNetWorthSnapshot(user.id);
         return NextResponse.json({ message: 'Transaction deleted successfully' }, { status: 200 });
     } catch (error) {
         return NextResponse.json({ message: 'Error deleting transaction, ${error.message}' }, { status: 500 });

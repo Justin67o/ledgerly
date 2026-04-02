@@ -17,6 +17,7 @@ model User {
   accounts    Account[]
   budgets     Budget[]
   categories  Category[]
+  snapshots   NetWorthSnapshot[]
 }
 
 model Account {
@@ -88,6 +89,15 @@ model BudgetGoal {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([budgetId, categoryId])
+}
+
+model NetWorthSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Decimal
+  createdAt DateTime @default(now())
+  date      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum AccountType {

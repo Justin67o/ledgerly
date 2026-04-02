@@ -524,8 +524,8 @@ export default function Budgets() {
                             </section>
                         </div>
 
-                        {/* ── Right column: pie chart placeholder ── */}
-                        <div className="hidden md:flex flex-col items-center w-64 pt-10 shrink-0">
+                        {/* ── Pie chart placeholder ── */}
+                        <div className="flex flex-col items-center w-64 pt-10 shrink-0">
                             <p className="text-xs font-semibold uppercase tracking-widest mb-4 self-start" style={{ color: "var(--text-muted)" }}>
                                 Spending
                             </p>

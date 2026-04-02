@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { Prisma } from "@/generated/prisma/client";
 import { request } from "https";
+import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
 
 //TODO: add authentication and authorization to ensure users can only access their own accounts
 // get all existing accounts for user
@@ -62,6 +63,17 @@ export async function POST(request: Request) {
       }
     })
 
+    await prisma.account.update({
+      where: { id: account.id },
+      data: {
+        balance: {
+          increment: data.quantity * data.purchasePrice
+        }
+      }
+    })
+
+    createNetWorthSnapshot(user.id);
+    
     console.log("Created investment:", investment);
     return NextResponse.json({ message: 'Investment created successfully', data: investment }, { status: 201 });
   } catch (error) {
