@@ -56,10 +56,14 @@ export async function POST(request: Request) {
 
 
   try {
+    // Normalize sign based on category type: EXPENSE → always negative, INCOME → always positive
+    const rawAmount = Math.abs(parseFloat(data.amount));
+    const normalizedAmount = category?.type === "INCOME" ? rawAmount : -rawAmount;
+
     console.log("Creating transaction with account ID:", data.accountId, "and category ID:", data.categoryId);
     const transaction = await prisma.transaction.create({
       data: {
-        amount: new Prisma.Decimal(data.amount),
+        amount: new Prisma.Decimal(normalizedAmount),
         description: data.name,
         date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
         createdAt: data.createdAt ?? new Date(),
@@ -74,7 +78,7 @@ export async function POST(request: Request) {
       where: { id: account.id },
       data:{
         balance: {
-          increment: data.amount
+          increment: normalizedAmount
         }
       } 
     })

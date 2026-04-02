@@ -262,7 +262,7 @@ export default function AccountPage() {
                                         <div className="text-right mr-2">
                                             <p className="text-base font-semibold" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>{formatCurrency(currentValue)}</p>
                                             <p className="text-xs font-medium" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
-                                                {isPositive ? "+" : ""}{gainPct}%
+                                                {isPositive ? `+` : `-$${Math.abs(currentValue - costBasis)}`}{` (${gainPct}%)`}
                                             </p>
                                         </div>
                                         <button

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Prisma } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
+import { PencilIcon, Trash2Icon } from "lucide-react";
+import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
 type TransactionWithRelations = Prisma.TransactionGetPayload<{
     include: {
@@ -22,8 +24,19 @@ function formatCurrency(amount: number) {
 
 export default function Activity() {
     const [transactions, setTransactions] = useState<TransactionWithRelations[]>([]);
+    const [deletingTransaction, setDeletingTransaction] = useState<TransactionWithRelations | null>(null);
+
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+
+    const handleDeleteTransaction = async (transactionId: string) => {
+        try {
+            await apiFetch(`/api/transactions/${transactionId}`, { method: "DELETE" });
+            setTransactions(transactions.filter(tx => tx.id !== transactionId));
+        } catch (error) {
+            console.error("Error deleting transaction:", error);
+        }
+    };
 
     useEffect(() => {
         const fetchdata = async () => {
@@ -102,9 +115,40 @@ export default function Activity() {
                                     >
                                         {isPositive ? "+" : "−"}{formatCurrency(Math.abs(amount))}
                                     </p>
+                                    <button
+                                        className="p-2 rounded-lg transition-all duration-150"
+                                        style={{ color: "var(--text-muted)" }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                        onClick={() => router.push(`/dashboard/editTransaction/${tx.id}`)}
+                                    >
+                                        <PencilIcon className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        className="p-2 rounded-lg transition-all duration-150"
+                                        style={{ color: "var(--negative)" }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ff4d4d18")}
+                                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                                        onClick={(e) => { e.stopPropagation(); setDeletingTransaction(tx); }}
+                                    >
+                                        <Trash2Icon className="w-4 h-4" />
+                                    </button>
+                                    
                                 </div>
                             );
                         })}
+
+                        <DeleteConfirmation
+                            isOpen={!!deletingTransaction}
+                            onCancel={() => setDeletingTransaction(null)}
+                            onConfirm={() => {
+                                if (deletingTransaction) {
+                                    handleDeleteTransaction(deletingTransaction.id);
+                                    setDeletingTransaction(null);
+                                }
+                            }}
+                            itemName={`transaction "${deletingTransaction?.description}"`}
+                        />
                     </div>
                 )}
             </main>
