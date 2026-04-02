@@ -77,8 +77,18 @@ export default function EditInvestment() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
-                <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+            <div className="min-h-screen pb-24 md:pb-8" style={{ backgroundColor: "var(--bg-primary)" }}>
+                <main className="max-w-md mx-auto px-4 pt-6">
+                    <div className="skeleton h-4 w-12 mb-6" />
+                    <div className="skeleton h-8 w-44 mb-6" />
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="mb-4">
+                            <div className="skeleton h-3 w-20 mb-2" />
+                            <div className="skeleton h-10 w-full" />
+                        </div>
+                    ))}
+                    <div className="skeleton h-11 w-full mt-2" />
+                </main>
             </div>
         );
     }

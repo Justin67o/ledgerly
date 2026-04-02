@@ -49,9 +49,35 @@ export default function Dashboard() {
     fetchdata();
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+        <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
+          <div className="flex flex-col md:flex-row md:gap-8 mb-8">
+            <div className="flex-1">
+              <div className="skeleton h-4 w-20 mb-2" />
+              <div className="skeleton h-12 w-56 mb-1" />
+              <div className="skeleton h-4 w-32 mb-4" />
+              <div className="skeleton h-48 w-full mb-4" />
+              <div className="skeleton h-8 w-64 mx-auto" />
+            </div>
+            <div className="hidden md:flex flex-col gap-3 w-52 pt-14">
+              <div className="skeleton h-11 w-full" />
+              <div className="skeleton h-11 w-full" />
+            </div>
+          </div>
+          <div className="skeleton h-5 w-24 mb-4" />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-20" />)}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
-      
+
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">

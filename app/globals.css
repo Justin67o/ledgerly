@@ -113,13 +113,19 @@ select option {
   margin-bottom: 0.4rem;
 }
 
-/* ── Loading skeleton pulse ──────────────────────────── */
-@keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+/* ── Loading skeleton shimmer ────────────────────────── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
 }
 .skeleton {
-  animation: skeleton-pulse 1.4s ease-in-out infinite;
-  background-color: var(--bg-card);
-  border-radius: 1rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(
+    90deg,
+    #2a2a2a 25%,
+    #383838 50%,
+    #2a2a2a 75%
+  );
+  background-size: 600px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }

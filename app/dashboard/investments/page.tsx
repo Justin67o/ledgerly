@@ -63,6 +63,25 @@ export default function Investments() {
         fetchdata();
     }, []);
 
+    if (isLoading) {
+        return (
+            <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
+                <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8 pb-8">
+                    <div className="skeleton h-8 w-48 mb-2" />
+                    <div className="skeleton h-12 w-64 mb-1" />
+                    <div className="skeleton h-4 w-32 mb-6" />
+                    <div className="skeleton h-48 w-full mb-6" />
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3 mb-8">
+                        {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-20" />)}
+                    </div>
+                    <div className="space-y-2">
+                        {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-16" />)}
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
             <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8 pb-8">

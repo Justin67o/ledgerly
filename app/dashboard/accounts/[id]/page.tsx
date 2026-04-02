@@ -87,8 +87,17 @@ export default function AccountPage() {
 
     if (isLoading || !account) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
-                <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+            <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)" }}>
+                <main className="max-w-5xl mx-auto px-4 md:px-8 pt-8">
+                    <div className="skeleton h-4 w-24 mb-2" />
+                    <div className="skeleton h-12 w-56 mb-1" />
+                    <div className="skeleton h-4 w-32 mb-4" />
+                    <div className="skeleton h-48 w-full mb-4" />
+                    <div className="skeleton h-8 w-64 mx-auto mb-6" />
+                    <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-16" />)}
+                    </div>
+                </main>
             </div>
         );
     }
