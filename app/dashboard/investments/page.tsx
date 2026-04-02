@@ -9,6 +9,13 @@ import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
+// Deterministic mock gain % based on ticker name so it doesn't flicker on re-render
+function mockGainPct(name: string): number {
+    const seed = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    // Range: -15% to +30%
+    return parseFloat((((seed % 45) - 15) + (seed % 7) * 0.3).toFixed(2));
+}
+
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-CA", {
         style: "currency",
@@ -163,6 +170,9 @@ export default function Investments() {
                     <div className="space-y-2">
                         {investments.map((inv) => {
                             const costBasis = parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString());
+                            const gainPct = mockGainPct(inv.name);
+                            const currentValue = costBasis * (1 + gainPct / 100);
+                            const isPositive = gainPct >= 0;
                             return (
                                 <div
                                     key={inv.id}
@@ -178,8 +188,10 @@ export default function Investments() {
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                         <div className="text-right mr-2">
-                                            <p className="text-base font-semibold">{formatCurrency(costBasis)}</p>
-                                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>cost basis</p>
+                                            <p className="text-base font-semibold" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>{formatCurrency(currentValue)}</p>
+                                            <p className="text-xs font-medium" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
+                                                {isPositive ? "+" : ""}{gainPct}%
+                                            </p>
                                         </div>
                                         <button
                                             className="p-2 rounded-lg transition-all duration-150"
