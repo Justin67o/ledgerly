@@ -38,6 +38,7 @@ model Transaction {
   amount      Decimal
   description String?
   date        String
+  type        CategoryType
   createdAt   DateTime @default(now())
   accountId   String
   categoryId  String?

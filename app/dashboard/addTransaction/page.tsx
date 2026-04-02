@@ -47,8 +47,9 @@ export default function AddTransaction() {
             ? { accountId, categoryId, date, amount: signedAmount, name }
             : { aiInput };
 
+        const route = manuallyFilled ? "/api/transactions" : "/api/ai/parse-transactions";
         try {
-            await apiFetch("/api/transactions", {
+            await apiFetch(route, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(transactionData),

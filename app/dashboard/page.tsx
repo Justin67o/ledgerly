@@ -87,7 +87,9 @@ export default function Dashboard() {
 
   const finalSnapshots = Object.values(latestPerDate)
 
-
+  const difference = timeframe !== "1D"
+    ? finalSnapshots.length > 1 ? finalSnapshots[finalSnapshots.length - 1].amount - finalSnapshots[0].amount : 0
+    : filteredSnapshots.length > 1 ? filteredSnapshots[filteredSnapshots.length - 1].amount - filteredSnapshots[0].amount : 0;
   if (isLoading) {
     return (
       <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
@@ -134,8 +136,9 @@ export default function Dashboard() {
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
                 {hoveredData ? formatCurrency(hoveredData.amount) : formatCurrency(netWorth)}
               </h1>
-              <p className="text-sm mt-1" style={{ color: hoveredData ? "var(--text-secondary)" : "var(--positive)" }}>
-                {hoveredData ? `${hoveredData.date}` : "+$1,240.50 (5.1%) this month"}
+              <p className="text-sm mt-1" style={{ color: hoveredData ? "var(--text-secondary)" : difference >= 0 ? "var(--positive)" : "var(--negative)" }}>
+                {hoveredData ?
+                  `${hoveredData.date}` : `${difference >= 0 ? "+" : ""}${formatCurrency(difference)} (${((difference / (timeframe !== "1D" ? finalSnapshots[0]?.amount || netWorth : filteredSnapshots[0]?.amount || netWorth)) * 100).toFixed(2)}%)`}
               </p>
             </div>
 

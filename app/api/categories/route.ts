@@ -19,7 +19,7 @@ export async function GET() {
 
 }
 
-// create a new transaction
+// create a new category
 export async function POST(request: Request) {
   const data = await request.json();
   const user = await requireAuthentication();
