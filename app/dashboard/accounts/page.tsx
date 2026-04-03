@@ -24,6 +24,7 @@ function formatCurrency(amount: number) {
 
 export default function Accounts() {
     const [accounts, setAccounts] = useState<Account[]>([]);
+    const [liveBalances, setLiveBalances] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
     const router = useRouter();
@@ -41,7 +42,34 @@ export default function Accounts() {
         const fetchdata = async () => {
             try {
                 const fetchedAccounts = await apiFetch("/api/accounts");
-                setAccounts(fetchedAccounts.data);
+                const accs: Account[] = fetchedAccounts.data;
+                setAccounts(accs);
+
+                const investmentAccounts = accs.filter(a => a.type === "INVESTMENT");
+                if (investmentAccounts.length > 0) {
+                    const live: Record<string, number> = {};
+                    await Promise.all(investmentAccounts.map(async (acc) => {
+                        try {
+                            const invs = await apiFetch(`/api/investments?accountId=${acc.id}`);
+                            const holdings = invs.data;
+                            const priceResults = await Promise.all(
+                                holdings.map(async (inv: { name: string; quantity: string; purchasePrice: string }) => {
+                                    try {
+                                        const res = await apiFetch(`/api/investments/prices?ticker=${encodeURIComponent(inv.name)}`);
+                                        return parseFloat(inv.quantity.toString()) * res.data;
+                                    } catch {
+                                        return parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString());
+                                    }
+                                })
+                            );
+                            live[acc.id] = priceResults.reduce((s, v) => s + v, 0);
+                        } catch {
+                            live[acc.id] = parseFloat(acc.balance.toString());
+                        }
+                    }));
+                    setLiveBalances(live);
+                }
+
                 setIsLoading(false);
             } catch (error) {
                 console.error("Error fetching accounts:", error);
@@ -77,7 +105,9 @@ export default function Accounts() {
                     <div className="space-y-3">
                         {accounts.map((account) => {
                             const typeStyle = TYPE_STYLES[account.type] ?? { bg: "var(--bg-hover)", color: "var(--text-secondary)" };
-                            const balance = parseFloat(account.balance.toString());
+                            const balance = account.type === "INVESTMENT" && liveBalances[account.id] !== undefined
+                                ? liveBalances[account.id]
+                                : parseFloat(account.balance.toString());
                             return (
                                 <div
                                     key={account.id}

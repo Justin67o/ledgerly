@@ -53,8 +53,9 @@ export async function POST(request: Request) {
         );
 
         console.log("gemini responded")
-        const parsed = JSON.parse(aiResult.response.text());
-        console.log(aiResult.response.text());
+        const rawText = aiResult.response.text().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+        console.log(rawText);
+        const parsed = JSON.parse(rawText);
         console.log("Parsed AI result:", parsed);
 
         const account = await prisma.account.findFirst({

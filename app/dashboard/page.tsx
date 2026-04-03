@@ -29,12 +29,18 @@ function formatCurrency(amount: number) {
 export default function Dashboard() {
   const [timeframe, setTimeframe] = useState("1D");
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [liveBalances, setLiveBalances] = useState<Record<string, number>>({});
   const [snapshots, setSnapshots] = useState<{ date: string; amount: number; createdAt: Date }[]>([]);
   const [hoveredData, setHoveredData] = useState<{ date: string; amount: number } | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const netWorth = accounts.reduce((sum, a) => sum + parseFloat(a.balance.toString()), 0);
+  const netWorth = accounts.reduce((sum, a) => {
+    const balance = a.type === "INVESTMENT" && liveBalances[a.id] !== undefined
+      ? liveBalances[a.id]
+      : parseFloat(a.balance.toString());
+    return sum + balance;
+  }, 0);
 
   const router = useRouter();
 
@@ -46,11 +52,39 @@ export default function Dashboard() {
       apiFetch("/api/snapshots/cleanup", { method: "POST" });
 
       try {
-        const fetchedAccounts = await apiFetch("/api/accounts");
-        setAccounts(fetchedAccounts.data);
-        const fetchedSnapshots = await apiFetch("/api/snapshots");
+        const [fetchedAccounts, fetchedSnapshots] = await Promise.all([
+          apiFetch("/api/accounts"),
+          apiFetch("/api/snapshots"),
+        ]);
+        const accs: Account[] = fetchedAccounts.data;
+        setAccounts(accs);
         setSnapshots(fetchedSnapshots.data);
-        console.log("Fetched snapshots:", fetchedSnapshots.data);
+
+        const investmentAccounts = accs.filter(a => a.type === "INVESTMENT");
+        if (investmentAccounts.length > 0) {
+          const live: Record<string, number> = {};
+          await Promise.all(investmentAccounts.map(async (acc) => {
+            try {
+              const invs = await apiFetch(`/api/investments?accountId=${acc.id}`);
+              const holdings = invs.data;
+              const values = await Promise.all(
+                holdings.map(async (inv: { name: string; quantity: string; purchasePrice: string }) => {
+                  try {
+                    const res = await apiFetch(`/api/investments/prices?ticker=${encodeURIComponent(inv.name)}`);
+                    return parseFloat(inv.quantity.toString()) * res.data;
+                  } catch {
+                    return parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString());
+                  }
+                })
+              );
+              live[acc.id] = values.reduce((s, v) => s + v, 0);
+            } catch {
+              live[acc.id] = parseFloat(acc.balance.toString());
+            }
+          }));
+          setLiveBalances(live);
+        }
+
         setIsLoading(false);
       }
       catch (error) {
@@ -138,7 +172,7 @@ export default function Dashboard() {
               </h1>
               <p className="text-sm mt-1" style={{ color: hoveredData ? "var(--text-secondary)" : difference >= 0 ? "var(--positive)" : "var(--negative)" }}>
                 {hoveredData ?
-                  `${hoveredData.date}` : `${difference >= 0 ? "+" : ""}${formatCurrency(difference)} (${((difference / (timeframe !== "1D" ? finalSnapshots[0]?.amount || netWorth : filteredSnapshots[0]?.amount || netWorth)) * 100).toFixed(2)}%)`}
+                  `${hoveredData.date}` : `${difference >= 0 ? "+" : ""}${formatCurrency(difference)} (${difference >= 0 ? "+" : ""}${((difference / Math.abs(timeframe !== "1D" ? finalSnapshots[0]?.amount || netWorth : filteredSnapshots[0]?.amount || netWorth)) * 100).toFixed(2)}%)`}
               </p>
             </div>
 
@@ -222,7 +256,11 @@ export default function Dashboard() {
                     {account.type}
                   </span>
                 </div>
-                <p className="text-xl font-semibold">{formatCurrency(parseFloat(account.balance.toString()))}</p>
+                <p className="text-xl font-semibold">
+                  {formatCurrency(account.type === "INVESTMENT" && liveBalances[account.id] !== undefined
+                    ? liveBalances[account.id]
+                    : parseFloat(account.balance.toString()))}
+                </p>
               </div>
             ))}
           </div>

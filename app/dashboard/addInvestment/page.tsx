@@ -37,8 +37,9 @@ export default function AddInvestment() {
             ? { accountId, date, quantity: parseFloat(quantity), purchasePrice: parseFloat(purchasePrice), name }
             : { aiInput };
 
+        const route = manuallyFilled ? "/api/investments" : "/api/ai/parse-investments";
         try {
-            await apiFetch("/api/investments", {
+            await apiFetch(route, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(investmentData),
@@ -90,6 +91,7 @@ export default function AddInvestment() {
                             </span>
                         </div>
                         <input
+                            className="w-full"
                             id="aiInput"
                             type="text"
                             placeholder="e.g. Bought 5 shares of AAPL at $195 today"

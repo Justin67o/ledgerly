@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronDownIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import SimplePieChart, { PIE_COLORS, PieSlice } from "@/src/components/piechart";
 
 // Generate last 12 months for the dropdown
 function generateMonths() {
@@ -113,6 +114,14 @@ export default function Budgets() {
     const goals = budget?.goals ?? [];
     const totalSpent = goals.reduce((s, g) => s + (g.categoryType === "EXPENSE" ? g.spent : 0), 0);
     const totalGoal = goals.reduce((s, g) => s + (g.categoryType === "EXPENSE" ? g.goalAmount : 0), 0);
+
+    const incomeGoals = goals.filter(g => g.categoryType === "EXPENSE");
+    const pieData: (PieSlice & { fill: string })[] = incomeGoals
+        .filter(g => g.spent > 0)
+        .map((g) => {
+            const colorIdx = incomeGoals.indexOf(g);
+            return { name: g.categoryName, value: g.spent, fill: PIE_COLORS[colorIdx % PIE_COLORS.length] };
+        });
     const overallPct = totalGoal > 0 ? Math.min((totalSpent / totalGoal) * 100, 100) : 0;
     const overallOver = totalSpent > totalGoal;
     const overallColor = overallOver ? "var(--negative)" : "var(--accent)";
@@ -524,27 +533,19 @@ export default function Budgets() {
                             </section>
                         </div>
 
-                        {/* ── Pie chart placeholder ── */}
+                        {/* ── Pie chart ── */}
                         <div className="flex flex-col items-center w-64 pt-10 shrink-0">
-                            <p className="text-xs font-semibold uppercase tracking-widest mb-4 self-start" style={{ color: "var(--text-muted)" }}>
-                                Spending
-                            </p>
-                            <div
-                                className="w-52 h-52 rounded-full flex items-center justify-center"
-                                style={{ border: "2px dashed var(--border)", backgroundColor: "var(--bg-card)" }}
-                            >
-                                <div className="text-center">
-                                    <div className="text-3xl mb-1">🥧</div>
-                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Chart coming soon</p>
-                                </div>
-                            </div>
+                            <SimplePieChart isAnimationActive={false} data={pieData} />
                             <div className="mt-6 w-full space-y-2">
-                                {goals.map(({ id, categoryName }) => (
+                                {incomeGoals.map(({ id, categoryName }, i) => (
                                     <div key={id} className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: "var(--border)" }} />
+                                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
                                         <span className="text-xs" style={{ color: "var(--text-muted)" }}>{categoryName}</span>
                                     </div>
                                 ))}
+                                {incomeGoals.length === 0 && (
+                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>No income categories yet</p>
+                                )}
                             </div>
                         </div>
 

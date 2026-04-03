@@ -9,13 +9,6 @@ import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
-// Deterministic mock gain % based on ticker name so it doesn't flicker on re-render
-function mockGainPct(name: string): number {
-    const seed = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    // Range: -15% to +30%
-    return parseFloat((((seed % 45) - 15) + (seed % 7) * 0.3).toFixed(2));
-}
-
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-CA", {
         style: "currency",
@@ -28,13 +21,20 @@ export default function Investments() {
     const [timeframe, setTimeframe] = useState("1M");
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [investments, setInvestments] = useState<Investment[]>([]);
+    const [prices, setPrices] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [deletingInvestment, setDeletingInvestment] = useState<Investment | null>(null);
     const router = useRouter();
 
-    const netWorth = accounts
-        .filter(a => a.type === "INVESTMENT")
-        .reduce((sum, a) => sum + parseFloat(a.balance.toString()), 0);
+    const totalCurrentValue = investments.reduce((sum, inv) => {
+        const qty = parseFloat(inv.quantity.toString());
+        const price = prices[inv.name] ?? parseFloat(inv.purchasePrice.toString());
+        return sum + qty * price;
+    }, 0);
+    const totalCostBasis = investments.reduce((sum, inv) =>
+        sum + parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString()), 0);
+    const overallGain = parseFloat((totalCurrentValue - totalCostBasis).toFixed(2));
+    const overallGainPct = totalCostBasis > 0 ? parseFloat(((overallGain / totalCostBasis) * 100).toFixed(2)) : 0;
 
     const handleDeleteInvestment = async (investmentId: string) => {
         try {
@@ -53,7 +53,25 @@ export default function Investments() {
                     apiFetch("/api/investments"),
                 ]);
                 setAccounts(accs.data);
-                setInvestments(invs.data);
+                const invData: Investment[] = invs.data;
+                setInvestments(invData);
+
+                const tickers = [...new Set(invData.map((inv) => inv.name))];
+                const priceEntries = await Promise.all(
+                    tickers.map(async (ticker) => {
+                        try {
+                            const res = await apiFetch(`/api/investments/prices?ticker=${encodeURIComponent(ticker)}`);
+                            return [ticker, res.data] as [string, number];
+                        } catch {
+                            return [ticker, null] as [string, null];
+                        }
+                    })
+                );
+                const priceMap: Record<string, number> = {};
+                for (const [ticker, price] of priceEntries) {
+                    if (price !== null) priceMap[ticker] = price;
+                }
+                setPrices(priceMap);
                 setIsLoading(false);
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -91,11 +109,16 @@ export default function Investments() {
                     <div className="flex-1">
                         <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>Total Investments</p>
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                            {formatCurrency(netWorth)}
+                            {formatCurrency(totalCurrentValue)}
                         </h1>
-                        <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
-                            +$1,240.50 (5.1%) this month
-                        </p>
+                        {investments.length > 0 && (() => {
+                            const isPositive = overallGain >= 0;
+                            return (
+                                <p className="text-sm mt-1" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
+                                    {isPositive ? "+" : "−"}{formatCurrency(Math.abs(overallGain))} ({isPositive ? "+" : "-"}{Math.abs(overallGainPct).toFixed(2)}%) total return
+                                </p>
+                            );
+                        })()}
 
                         {/* Graph Placeholder */}
                         <div
@@ -188,10 +211,14 @@ export default function Investments() {
                     <h2 className="text-base font-semibold mb-4">Holdings</h2>
                     <div className="space-y-2">
                         {investments.map((inv) => {
-                            const costBasis = parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString());
-                            const gainPct = mockGainPct(inv.name);
-                            const currentValue = costBasis * (1 + gainPct / 100);
-                            const isPositive = gainPct >= 0;
+                            const qty = parseFloat(inv.quantity.toString());
+                            const purchasePrice = parseFloat(inv.purchasePrice.toString());
+                            const costBasis = qty * purchasePrice;
+                            const currentPrice = prices[inv.name] ?? purchasePrice;
+                            const currentValue = qty * currentPrice;
+                            const gain = parseFloat((currentValue - costBasis).toFixed(2));
+                            const gainPct = costBasis > 0 ? parseFloat(((gain / costBasis) * 100).toFixed(2)) : 0;
+                            const isPositive = gain >= 0;
                             return (
                                 <div
                                     key={inv.id}
@@ -202,14 +229,14 @@ export default function Investments() {
                                         <p className="font-semibold text-sm">{inv.name}</p>
                                         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{inv.date}</p>
                                         <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
-                                            {inv.quantity.toString()} units @ {formatCurrency(parseFloat(inv.purchasePrice.toString()))}
+                                            {inv.quantity.toString()} units @ {formatCurrency(purchasePrice)}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                         <div className="text-right mr-2">
                                             <p className="text-base font-semibold" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>{formatCurrency(currentValue)}</p>
                                             <p className="text-xs font-medium" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
-                                                {isPositive ? `+` : `-$${Math.abs(currentValue - costBasis)}`}{` (${gainPct}%)`}
+                                                {isPositive ? "+" : "−"}{formatCurrency(Math.abs(gain))} ({isPositive ? "+" : "-"}{Math.abs(gainPct).toFixed(2)}%)
                                             </p>
                                         </div>
                                         <button

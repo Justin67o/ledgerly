@@ -17,11 +17,6 @@ type InvestmentWithRelations = Prisma.InvestmentGetPayload<{
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
-function mockGainPct(name: string): number {
-    const seed = name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    return parseFloat((((seed % 45) - 15) + (seed % 7) * 0.3).toFixed(2));
-}
-
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-CA", {
         style: "currency",
@@ -36,6 +31,7 @@ export default function AccountPage() {
 
     const [transactions, setTransactions] = useState<TransactionWithRelations[]>([]);
     const [investments, setInvestments] = useState<InvestmentWithRelations[]>([]);
+    const [prices, setPrices] = useState<Record<string, number>>({});
     const [account, setAccount] = useState<Account | null>(null);
     const [timeframe, setTimeframe] = useState("1M");
     const [isLoading, setIsLoading] = useState(true);
@@ -43,7 +39,18 @@ export default function AccountPage() {
     const [deletingInvestment, setDeletingInvestment] = useState<InvestmentWithRelations | null>(null);
 
     const router = useRouter();
-    const accountBalance = account ? parseFloat(account.balance.toString()) : 0;
+    const costBasisTotal = investments.reduce((sum, inv) =>
+        sum + parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString()), 0);
+    const liveTotal = investments.length > 0
+        ? investments.reduce((sum, inv) => {
+            const qty = parseFloat(inv.quantity.toString());
+            const price = prices[inv.name] ?? parseFloat(inv.purchasePrice.toString());
+            return sum + qty * price;
+        }, 0)
+        : null;
+    const accountBalance = account
+        ? (account.type === "INVESTMENT" && liveTotal !== null ? liveTotal : parseFloat(account.balance.toString()))
+        : 0;
 
     const handleDeleteTransaction = async (transactionId: string) => {
         try {
@@ -74,7 +81,24 @@ export default function AccountPage() {
                     setTransactions(fetchedTransactions.data);
                 } else {
                     const fetchedInvestments = await apiFetch(`/api/investments?accountId=${id}`);
-                    setInvestments(fetchedInvestments.data);
+                    const invData: InvestmentWithRelations[] = fetchedInvestments.data;
+                    setInvestments(invData);
+
+                    const priceEntries = await Promise.all(
+                        invData.map(async (inv) => {
+                            try {
+                                const res = await apiFetch(`/api/investments/prices?ticker=${encodeURIComponent(inv.name)}`);
+                                return [inv.name, res.data] as [string, number];
+                            } catch {
+                                return [inv.name, null] as [string, null];
+                            }
+                        })
+                    );
+                    const priceMap: Record<string, number> = {};
+                    for (const [ticker, price] of priceEntries) {
+                        if (price !== null) priceMap[ticker] = price;
+                    }
+                    setPrices(priceMap);
                 }
                 setIsLoading(false);
             } catch (error) {
@@ -115,39 +139,50 @@ export default function AccountPage() {
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
                             {formatCurrency(accountBalance)}
                         </h1>
-                        <p className="text-sm mt-1" style={{ color: "var(--positive)" }}>
-                            +$1,240.50 (5.1%) this month
-                        </p>
+                        {account.type === "INVESTMENT" && liveTotal !== null && (() => {
+                            const overallGain = parseFloat((liveTotal - costBasisTotal).toFixed(2));
+                            const overallGainPct = costBasisTotal > 0 ? parseFloat(((overallGain / costBasisTotal) * 100).toFixed(2)) : 0;
+                            const isPositive = overallGain >= 0;
+                            return (
+                                <p className="text-sm mt-1" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
+                                    {isPositive ? "+" : "−"}{formatCurrency(Math.abs(overallGain))} ({isPositive ? "+" : "-"}{Math.abs(overallGainPct).toFixed(2)}%) total return
+                                </p>
+                            );
+                        })()}
 
-                        {/* Graph Placeholder */}
-                        <div
-                            className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4 mt-4"
-                            style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
-                        >
-                            <div className="text-center">
-                                <div className="text-2xl mb-1">📈</div>
-                                <p className="text-sm">Graph coming soon</p>
-                            </div>
-                        </div>
+                        {/* Graph Placeholder — investment accounts only */}
+                        {account.type === "INVESTMENT" && (
+                            <>
+                                <div
+                                    className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4 mt-4"
+                                    style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+                                >
+                                    <div className="text-center">
+                                        <div className="text-2xl mb-1">📈</div>
+                                        <p className="text-sm">Graph coming soon</p>
+                                    </div>
+                                </div>
 
-                        {/* Timeframe Selector */}
-                        <div className="flex justify-center">
-                            <div className="inline-flex rounded-xl p-1 gap-1" style={{ backgroundColor: "var(--bg-card)" }}>
-                                {TIMEFRAMES.map((tf) => (
-                                    <button
-                                        key={tf}
-                                        onClick={() => setTimeframe(tf)}
-                                        className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-150"
-                                        style={{
-                                            backgroundColor: timeframe === tf ? "var(--bg-hover)" : "transparent",
-                                            color: timeframe === tf ? "var(--text-primary)" : "var(--text-muted)",
-                                        }}
-                                    >
-                                        {tf}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                                {/* Timeframe Selector */}
+                                <div className="flex justify-center">
+                                    <div className="inline-flex rounded-xl p-1 gap-1" style={{ backgroundColor: "var(--bg-card)" }}>
+                                        {TIMEFRAMES.map((tf) => (
+                                            <button
+                                                key={tf}
+                                                onClick={() => setTimeframe(tf)}
+                                                className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-150"
+                                                style={{
+                                                    backgroundColor: timeframe === tf ? "var(--bg-hover)" : "transparent",
+                                                    color: timeframe === tf ? "var(--text-primary)" : "var(--text-muted)",
+                                                }}
+                                            >
+                                                {tf}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Action buttons — desktop */}
@@ -241,10 +276,14 @@ export default function AccountPage() {
                 ) : (
                     <div className="space-y-2">
                         {investments.map((inv) => {
-                            const costBasis = parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString());
-                            const gainPct = mockGainPct(inv.name);
-                            const currentValue = costBasis * (1 + gainPct / 100);
-                            const isPositive = gainPct >= 0;
+                            const qty = parseFloat(inv.quantity.toString());
+                            const purchasePrice = parseFloat(inv.purchasePrice.toString());
+                            const costBasis = qty * purchasePrice;
+                            const currentPrice = prices[inv.name] ?? purchasePrice;
+                            const currentValue = qty * currentPrice;
+                            const gain = parseFloat((currentValue - costBasis).toFixed(2));
+                            const gainPct = costBasis > 0 ? parseFloat(((gain / costBasis) * 100).toFixed(2)) : 0;
+                            const isPositive = gain >= 0;
                             return (
                                 <div
                                     key={inv.id}
@@ -260,9 +299,11 @@ export default function AccountPage() {
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                         <div className="text-right mr-2">
-                                            <p className="text-base font-semibold" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>{formatCurrency(currentValue)}</p>
+                                            <p className="text-base font-semibold" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
+                                                {formatCurrency(currentValue)}
+                                            </p>
                                             <p className="text-xs font-medium" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
-                                                {isPositive ? `+` : `-$${Math.abs(currentValue - costBasis)}`}{` (${gainPct}%)`}
+                                                {isPositive ? "+" : "−"}{formatCurrency(Math.abs(gain))} ({isPositive ? "+" : "-"}{Math.abs(gainPct).toFixed(2)}%)
                                             </p>
                                         </div>
                                         <button
