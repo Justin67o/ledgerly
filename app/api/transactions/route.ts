@@ -63,28 +63,35 @@ export async function POST(request: Request) {
     const normalizedAmount = category ? category.type === "INCOME" ? rawAmount : -rawAmount : rawAmount; // if category is missing, just use the raw amount as-is (could be positive or negative based on user input)
 
     console.log("Creating transaction with account ID:", data.accountId, "and category ID:", data.categoryId);
-    const transaction = await prisma.transaction.create({
-      data: {
-        amount: new Prisma.Decimal(normalizedAmount),
-        description: data.name,
-        date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
-        createdAt: data.createdAt ?? new Date(),
-        type: data.type ?? (category ? category.type : "EXPENSE"),
-        accountId: account.id,
-        categoryId: category?.id ?? null
-      }
-    })
+
+    
+    const transaction = await prisma.$transaction([
+
+      prisma.transaction.create({
+        data: {
+          amount: new Prisma.Decimal(normalizedAmount),
+          description: data.name,
+          date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
+          createdAt: data.createdAt ?? new Date(),
+          type: data.type ?? (category ? category.type : "EXPENSE"),
+          accountId: account.id,
+          categoryId: category?.id ?? null
+        }
+      }),
+
+      prisma.account.update({
+        where: { id: account.id },
+        data: {
+          balance: {
+            increment: normalizedAmount
+          }
+        }
+      })
+
+    ]);
 
     console.log("Created transaction:", transaction);
 
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
-        balance: {
-          increment: normalizedAmount
-        }
-      }
-    })
 
     createNetWorthSnapshot(user.id);
     return NextResponse.json({ message: 'Transaction created successfully', data: transaction }, { status: 201 });

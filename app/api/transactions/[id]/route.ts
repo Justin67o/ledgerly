@@ -1,129 +1,112 @@
-import { getServerSession } from "next-auth";
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
-import { trace } from "console";
-import { create } from "domain";
 import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
 
-// update one specific existing transaction by id
-
-export async function PUT(request: Request,
-    { params }: { params: Promise<{ id: string }> }
+// PUT: Update a specific transaction
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const data = await request.json();
+  const user = await requireAuthentication();
+  if (!user) return new Response("Unauthorized", { status: 401 });
 
-    const data = await request.json();
-    const user = await requireAuthentication();
-    if (!user) return new Response("Unauthorized", { status: 401 });
-    const account = await prisma.account.findUnique({
-        where: { id: data.accountId },
-    });
+  const { id } = await params;
+  const existing = await prisma.transaction.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ message: "Transaction not found" });
 
-    const category = await prisma.category.findUnique({
-        where: { id: data.categoryId },
-    });
+  const account = await prisma.account.findUnique({ where: { id: data.accountId } });
+  if (!account || account.userId !== user.id) return new Response("Invalid account", { status: 400 });
 
-    if (!account || account.userId !== user.id) {
-        return new Response("Invalid account", { status: 400 });
-    }
-    try {
-        const { id } = await params;
-        const existing = await prisma.transaction.findUnique({
-            where: { id: id }
-        })
+  const category = data.categoryId ? await prisma.category.findUnique({ where: { id: data.categoryId } }) : null;
 
-        if (!existing) return NextResponse.json({ message: "Transaction not found" });
-        console.log(existing.accountId)
-        await prisma.account.update({
-            where: { id: existing.accountId },
-            data: {
-                balance: {
-                    decrement: existing.amount
-                }
-            }
-        })
+  try {
+    const updatedTransaction = await prisma.$transaction(async (tx) => {
+      // Step 1: Remove old transaction amount from old account
+      await tx.account.update({
+        where: { id: existing.accountId },
+        data: { balance: { decrement: existing.amount } }
+      });
 
-
-        const updatedTransaction = await prisma.transaction.update({
-            where: { id: id },
-            data: {
-                ...(data.amount && { amount: data.amount }),
-                ...(data.description && { description: data.description }),
-                ...(data.date && { date: data.date }),
-                ...(data.accountId && { accountId: data.accountId }),
-                ...(data.type && { type: data.type }),
-                categoryId: category?.id ?? null,
-            }
-        });
-
-        await prisma.account.update({
-            where: { id: data.accountId},
-            data: { balance: { increment: data.amount }}
-        });
-
-        createNetWorthSnapshot(user.id);
-        console.log("Updated transaction:", updatedTransaction);
-        return NextResponse.json({ message: 'Transaction updated successfully', data: updatedTransaction }, { status: 200 });
-    } catch (error) {
-        return NextResponse.json({ message: 'Error updating transaction, ${error.message}' }, { status: 500 });
-    }
-}
-
-// delete one specific existing transaction by id
-export async function DELETE(
-    req: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const user = await requireAuthentication();
-    if (!user) return new Response("Unauthorized", { status: 401 });
-
-    try {
-        const { id } = await params;
-        const transaction = await prisma.transaction.findUnique({
-            where: { id: id },
-            include: { account: true },
-        });
-
-        if (!transaction || transaction.account.userId !== user.id) {
-            return new Response("Unauthorized", { status: 401 });
+      // Step 2: Update the transaction
+      const txUpdated = await tx.transaction.update({
+        where: { id },
+        data: {
+          ...(data.amount && { amount: data.amount }),
+          ...(data.description && { description: data.description }),
+          ...(data.date && { date: data.date }),
+          ...(data.accountId && { accountId: data.accountId }),
+          ...(data.type && { type: data.type }),
+          categoryId: category?.id ?? null,
         }
+      });
 
-        await prisma.account.update({
-            where: { id: transaction.account.id },
-            data: {
-                balance: {
-                    decrement: transaction.amount
-                }
-            }
-        })
-        await prisma.transaction.delete({
-            where: { id: id },
+      // Step 3: Add new transaction amount to new account
+      if (txUpdated.accountId && txUpdated.amount) {
+        await tx.account.update({
+          where: { id: txUpdated.accountId },
+          data: { balance: { increment: txUpdated.amount } }
         });
+      }
 
-
-        createNetWorthSnapshot(user.id);
-        return NextResponse.json({ message: 'Transaction deleted successfully' }, { status: 200 });
-    } catch (error) {
-        return NextResponse.json({ message: 'Error deleting transaction, ${error.message}' }, { status: 500 });
-    }
-
-
-}
-
-// Get request to get a single transaction by id
-export async function GET(
-    req: Request,
-    { params }: { params: Promise<{ id: string }> }) {
-    const user = await requireAuthentication();
-    if (!user) return new Response("Unauthorized", { status: 401 });
-    const { id } = await params;
-    const transaction = await prisma.transaction.findUnique({
-        where: { id: id },
-        include: { account: true },
+      return txUpdated;
     });
 
-    if (!transaction || transaction.account.userId !== user.id) {
-        return new Response("Unauthorized", { status: 401 });
+    await createNetWorthSnapshot(user.id);
+
+    return NextResponse.json({ message: 'Transaction updated successfully', data: updatedTransaction }, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof Error) {
+      return NextResponse.json({ message: `Error updating transaction: ${error.message}` }, { status: 500 });
     }
-    return NextResponse.json({ data: transaction }, { status: 200 });
+  }
+}
+
+// DELETE: Delete a transaction
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await requireAuthentication();
+  if (!user) return new Response("Unauthorized", { status: 401 });
+
+  const { id } = await params;
+  const transaction = await prisma.transaction.findUnique({ where: { id }, include: { account: true } });
+  if (!transaction || transaction.account.userId !== user.id) return new Response("Unauthorized", { status: 401 });
+
+  try {
+    await prisma.$transaction([
+      prisma.account.update({
+        where: { id: transaction.account.id },
+        data: { balance: { decrement: transaction.amount } }
+      }),
+      prisma.transaction.delete({ where: { id } })
+    ]);
+
+    await createNetWorthSnapshot(user.id);
+
+    return NextResponse.json({ message: 'Transaction deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    if (error instanceof Error) {
+      return NextResponse.json({ message: `Error deleting transaction: ${error.message}` }, { status: 500 });
+    }
+  }
+}
+
+// GET: Get a single transaction
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await requireAuthentication();
+  if (!user) return new Response("Unauthorized", { status: 401 });
+
+  const { id } = await params;
+  const transaction = await prisma.transaction.findUnique({ where: { id }, include: { account: true } });
+  if (!transaction || transaction.account.userId !== user.id) return new Response("Unauthorized", { status: 401 });
+
+  return NextResponse.json({ data: transaction }, { status: 200 });
 }

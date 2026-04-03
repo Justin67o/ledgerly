@@ -30,45 +30,49 @@ export async function PUT(request: Request,
 
 
 
-        await prisma.account.update({
-            where: { id: investment.accountId },
-            data: {
-                balance: {
-                    decrement: (parseFloat(investment.quantity.toString()) * parseFloat(investment.purchasePrice.toString()))
+        const updatedInvestment = await prisma.$transaction(async (inv) => {
+
+
+            await inv.account.update({
+                where: { id: investment.accountId },
+                data: {
+                    balance: {
+                        decrement: (parseFloat(investment.quantity.toString()) * parseFloat(investment.purchasePrice.toString()))
+                    }
                 }
-            }
-        })
+            })
 
 
-
-
-
-
-        const updatedInvestment = await prisma.investment.update({
-            where: { id: id },
-            data: {
-                ...(data.quantity && { quantity: data.quantity }),
-                ...(data.name && { name: data.name }),
-                ...(data.date && { date: data.date }),
-                ...(data.accountId && { accountId: data.accountId }),
-                ...(data.purchasePrice && { purchasePrice: data.purchasePrice })
-            }
-        });
-
-        await prisma.account.update({
-            where: { id: updatedInvestment.accountId },
-            data: {
-                balance: {
-                    increment: parseFloat(data.quantity.toString()) * parseFloat(data.purchasePrice.toString())
+            const invUpdated = await inv.investment.update({
+                where: { id: id },
+                data: {
+                    ...(data.quantity && { quantity: data.quantity }),
+                    ...(data.name && { name: data.name }),
+                    ...(data.date && { date: data.date }),
+                    ...(data.accountId && { accountId: data.accountId }),
+                    ...(data.purchasePrice && { purchasePrice: data.purchasePrice })
                 }
-            }
+            })
+
+            await inv.account.update({
+                where: { id: invUpdated.accountId },
+                data: {
+                    balance: {
+                        increment: parseFloat(data.quantity.toString()) * parseFloat(data.purchasePrice.toString())
+                    }
+                }
+            });
+
+            return invUpdated;
         });
 
         createNetWorthSnapshot(user.id);
         console.log("Updated investment:", updatedInvestment);
         return NextResponse.json({ message: 'Investment updated successfully', data: updatedInvestment }, { status: 200 });
     } catch (error) {
-        return NextResponse.json({ message: 'Error updating investment, ${error.message}' }, { status: 500 });
+        if (error instanceof Error) {
+            return NextResponse.json({ message: `Error updating investment, ${error.message}` }, { status: 500 })
+        };
     }
 }
 
@@ -91,23 +95,27 @@ export async function DELETE(
             return new Response("Unauthorized", { status: 401 });
         }
 
-        await prisma.account.update({
-            where: { id: investment.account.id },
-            data: {
-                balance: {
-                    decrement: parseFloat(investment.quantity.toString()) * parseFloat(investment.purchasePrice.toString())
+        await prisma.$transaction([
+            prisma.account.update({
+                where: { id: investment.account.id },
+                data: {
+                    balance: {
+                        decrement: parseFloat(investment.quantity.toString()) * parseFloat(investment.purchasePrice.toString())
+                    }
                 }
-            }
-        })
+            }),
 
-        await prisma.investment.delete({
-            where: { id: id },
-        });
+            prisma.investment.delete({
+                where: { id: id },
+            })
+        ]);
 
         createNetWorthSnapshot(user.id);
         return NextResponse.json({ message: 'Investment deleted successfully' }, { status: 200 });
     } catch (error) {
-        return NextResponse.json({ message: 'Error deleting investment, ${error.message}' }, { status: 500 });
+        if (error instanceof Error) {
+            return NextResponse.json({ message: `Error deleting investment, ${error.message}` }, { status: 500 })
+        };
     }
 
 

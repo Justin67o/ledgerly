@@ -19,9 +19,10 @@ export async function GET(request: Request) {
   try {
 
     const userInvestments = await prisma.investment.findMany({
-      where: { 
+      where: {
         accountId: accountId || undefined, // if accountId is provided, filter by it; otherwise, get all transactions for the user
-        account: { userId: user.id } },
+        account: { userId: user.id }
+      },
       include: { account: true },
     });
     return NextResponse.json({ message: 'Investments retrieved successfully', data: userInvestments }, { status: 200 });
@@ -52,28 +53,35 @@ export async function POST(request: Request) {
 
   try {
     console.log("Creating investment with account ID:", data.accountId);
-    const investment = await prisma.investment.create({
-      data: {
-        quantity: new Prisma.Decimal(data.quantity),
-        purchasePrice: new Prisma.Decimal(data.purchasePrice),
-        name: data.name,
-        date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
-        createdAt: data.createdAt ?? new Date(),
-        accountId: account.id,
-      }
-    })
 
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
-        balance: {
-          increment: data.quantity * data.purchasePrice
+
+
+    const investment = await prisma.$transaction([
+
+      prisma.investment.create({
+        data: {
+          quantity: new Prisma.Decimal(data.quantity),
+          purchasePrice: new Prisma.Decimal(data.purchasePrice),
+          name: data.name,
+          date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
+          createdAt: data.createdAt ?? new Date(),
+          accountId: account.id,
         }
-      }
-    })
+      }),
+
+      prisma.account.update({
+        where: { id: account.id },
+        data: {
+          balance: {
+            increment: data.quantity * data.purchasePrice
+          }
+        }
+      })
+
+    ]);
 
     createNetWorthSnapshot(user.id);
-    
+
     console.log("Created investment:", investment);
     return NextResponse.json({ message: 'Investment created successfully', data: investment }, { status: 201 });
   } catch (error) {
