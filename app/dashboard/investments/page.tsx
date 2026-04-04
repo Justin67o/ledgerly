@@ -6,8 +6,16 @@ import type { Account, Investment } from "@/generated/prisma/client";
 import { useRouter } from "next/navigation";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
+import SimpleAreaChart from "@/src/components/areaChart";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
+
+const days = {
+  "1W": 7,
+  "1M": 30,
+  "3M": 90,
+  "1Y": 365,
+};
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-CA", {
@@ -24,6 +32,8 @@ export default function Investments() {
     const [prices, setPrices] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [deletingInvestment, setDeletingInvestment] = useState<Investment | null>(null);
+    const [snapshots, setSnapshots] = useState<{ date: string; amount: number; createdAt: Date }[]>([]);
+    const [hoveredData, setHoveredData] = useState<{ date: string; amount: number } | null>(null);
     const router = useRouter();
 
     const totalCurrentValue = investments.reduce((sum, inv) => {
@@ -48,13 +58,16 @@ export default function Investments() {
     useEffect(() => {
         const fetchdata = async () => {
             try {
-                const [accs, invs] = await Promise.all([
+                apiFetch("/api/investment-snapshots/cleanup", { method: "POST" });
+                const [accs, invs, snapshotRes] = await Promise.all([
                     apiFetch("/api/accounts"),
                     apiFetch("/api/investments"),
+                    apiFetch("/api/investment-snapshots"),
                 ]);
                 setAccounts(accs.data);
                 const invData: Investment[] = invs.data;
                 setInvestments(invData);
+                setSnapshots(snapshotRes.data);
 
                 const tickers = [...new Set(invData.map((inv) => inv.name))];
                 const priceEntries = await Promise.all(
@@ -80,6 +93,22 @@ export default function Investments() {
         };
         fetchdata();
     }, []);
+
+    const filteredSnapshots = snapshots.filter((s) => {
+        if (timeframe === "All") return true;
+        if (timeframe === "1D") {
+            const now = new Date().toISOString().split("T")[0];
+            return s.date === now;
+        }
+        const now = new Date().toISOString().split("T")[0];
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days[timeframe as keyof typeof days]);
+        return s.date >= cutoff.toISOString().split("T")[0] && s.date <= now;
+    });
+
+    const latestPerDate: { [date: string]: { date: string; amount: number; createdAt: Date } } = {};
+    filteredSnapshots.forEach((s) => { latestPerDate[s.date] = s; });
+    const finalSnapshots = Object.values(latestPerDate);
 
     if (isLoading) {
         return (
@@ -120,15 +149,13 @@ export default function Investments() {
                             );
                         })()}
 
-                        {/* Graph Placeholder */}
-                        <div
-                            className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4 mt-4"
-                            style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
-                        >
-                            <div className="text-center">
-                                <div className="text-2xl mb-1">📈</div>
-                                <p className="text-sm">Portfolio graph coming soon</p>
-                            </div>
+                        {/* Portfolio Chart */}
+                        <div className="mb-4 mt-4">
+                            <SimpleAreaChart
+                                data={timeframe !== "1D" ? finalSnapshots : filteredSnapshots}
+                                timeframe={timeframe}
+                                onHover={setHoveredData}
+                            />
                         </div>
 
                         {/* Timeframe Selector */}

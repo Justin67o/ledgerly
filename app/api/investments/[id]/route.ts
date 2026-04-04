@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
+import { createInvestmentAccountSnapshot } from '@/lib/investmentAccountSnapshot';
+import { createInvestmentSnapshot } from '@/lib/investmentSnapshot';
 
 // update one specific existing investment by id
 
@@ -67,6 +69,8 @@ export async function PUT(request: Request,
         });
 
         createNetWorthSnapshot(user.id);
+        createInvestmentAccountSnapshot(updatedInvestment.accountId);
+        createInvestmentSnapshot(user.id);
         console.log("Updated investment:", updatedInvestment);
         return NextResponse.json({ message: 'Investment updated successfully', data: updatedInvestment }, { status: 200 });
     } catch (error) {
@@ -111,6 +115,8 @@ export async function DELETE(
         ]);
 
         createNetWorthSnapshot(user.id);
+        createInvestmentAccountSnapshot(investment.account.id);
+        createInvestmentSnapshot(user.id);
         return NextResponse.json({ message: 'Investment deleted successfully' }, { status: 200 });
     } catch (error) {
         if (error instanceof Error) {

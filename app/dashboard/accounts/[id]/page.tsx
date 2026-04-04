@@ -6,6 +6,7 @@ import type { Account, Prisma } from "@/generated/prisma/client";
 import { useRouter, useParams } from "next/navigation";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { DeleteConfirmation } from "@/src/components/deleteConfirmation";
+import SimpleAreaChart from "@/src/components/areaChart";
 
 type TransactionWithRelations = Prisma.TransactionGetPayload<{
     include: { account: true; category: true };
@@ -16,6 +17,13 @@ type InvestmentWithRelations = Prisma.InvestmentGetPayload<{
 }>;
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
+
+const days = {
+  "1W": 7,
+  "1M": 30,
+  "3M": 90,
+  "1Y": 365,
+};
 
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat("en-CA", {
@@ -37,6 +45,8 @@ export default function AccountPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [deletingTransaction, setDeletingTransaction] = useState<TransactionWithRelations | null>(null);
     const [deletingInvestment, setDeletingInvestment] = useState<InvestmentWithRelations | null>(null);
+    const [snapshots, setSnapshots] = useState<{ date: string; amount: number; createdAt: Date }[]>([]);
+    const [hoveredData, setHoveredData] = useState<{ date: string; amount: number } | null>(null);
 
     const router = useRouter();
     const costBasisTotal = investments.reduce((sum, inv) =>
@@ -99,6 +109,10 @@ export default function AccountPage() {
                         if (price !== null) priceMap[ticker] = price;
                     }
                     setPrices(priceMap);
+
+                    apiFetch(`/api/investment-account-snapshots/${id}/cleanup`, { method: "POST" });
+                    const snapshotRes = await apiFetch(`/api/investment-account-snapshots/${id}`);
+                    setSnapshots(snapshotRes.data);
                 }
                 setIsLoading(false);
             } catch (error) {
@@ -108,6 +122,22 @@ export default function AccountPage() {
         };
         fetchdata();
     }, []);
+
+    const filteredSnapshots = snapshots.filter((s) => {
+        if (timeframe === "All") return true;
+        if (timeframe === "1D") {
+            const now = new Date().toISOString().split("T")[0];
+            return s.date === now;
+        }
+        const now = new Date().toISOString().split("T")[0];
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days[timeframe as keyof typeof days]);
+        return s.date >= cutoff.toISOString().split("T")[0] && s.date <= now;
+    });
+
+    const latestPerDate: { [date: string]: { date: string; amount: number; createdAt: Date } } = {};
+    filteredSnapshots.forEach((s) => { latestPerDate[s.date] = s; });
+    const finalSnapshots = Object.values(latestPerDate);
 
     if (isLoading || !account) {
         return (
@@ -150,17 +180,15 @@ export default function AccountPage() {
                             );
                         })()}
 
-                        {/* Graph Placeholder — investment accounts only */}
+                        {/* Chart — investment accounts only */}
                         {account.type === "INVESTMENT" && (
                             <>
-                                <div
-                                    className="rounded-2xl flex items-center justify-center h-44 md:h-56 mb-4 mt-4"
-                                    style={{ backgroundColor: "var(--bg-card)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
-                                >
-                                    <div className="text-center">
-                                        <div className="text-2xl mb-1">📈</div>
-                                        <p className="text-sm">Graph coming soon</p>
-                                    </div>
+                                <div className="mb-4 mt-4">
+                                    <SimpleAreaChart
+                                        data={timeframe !== "1D" ? finalSnapshots : filteredSnapshots}
+                                        timeframe={timeframe}
+                                        onHover={setHoveredData}
+                                    />
                                 </div>
 
                                 {/* Timeframe Selector */}
