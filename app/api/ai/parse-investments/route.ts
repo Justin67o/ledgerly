@@ -50,20 +50,41 @@ export async function POST(request: Request) {
         if (!account) {
             return new Response("Invalid account parsed from AI", { status: 400 });
         }
-        console.log("Creating investment:", parsed);
-        const investment = await prisma.investment.create({
-            data: {
-                name: parsed.ticker,
-                quantity: new Prisma.Decimal(parsed.quantity),
-                purchasePrice: new Prisma.Decimal(parsed.purchasePrice),
-                date: parsed.date,
-                accountId: account.id,
-            }
+        const addedQty = parseFloat(parsed.quantity);
+        const addedPrice = parseFloat(parsed.purchasePrice);
+        const existing = await prisma.investment.findFirst({
+            where: { accountId: account.id, name: parsed.ticker },
         });
-        console.log("Investment created:", investment);
+
+        let investment;
+        if (existing) {
+            const existingQty = parseFloat(existing.quantity.toString());
+            const existingPrice = parseFloat(existing.purchasePrice.toString());
+            const newQty = existingQty + addedQty;
+            const newAvgPrice = (existingQty * existingPrice + addedQty * addedPrice) / newQty;
+
+            investment = await prisma.investment.update({
+                where: { id: existing.id },
+                data: {
+                    quantity: new Prisma.Decimal(newQty),
+                    purchasePrice: new Prisma.Decimal(newAvgPrice),
+                },
+            });
+        } else {
+            investment = await prisma.investment.create({
+                data: {
+                    name: parsed.ticker,
+                    quantity: new Prisma.Decimal(addedQty),
+                    purchasePrice: new Prisma.Decimal(addedPrice),
+                    date: parsed.date,
+                    accountId: account.id,
+                },
+            });
+        }
+        console.log("Investment created/updated:", investment);
         await prisma.account.update({
             where: { id: account.id },
-            data: { balance: { increment: parsed.quantity * parsed.purchasePrice } }
+            data: { balance: { increment: addedQty * addedPrice } }
         });
 
         createNetWorthSnapshot(user.id);
