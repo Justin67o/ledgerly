@@ -97,8 +97,9 @@ export default function Budgets() {
                     body: JSON.stringify({ month, year }),
                 });
                 const created = await res.json();
+                if (!created.data) return;
                 // Map created goals into the shape the page expects (spent = 0)
-                const goals = (created.data?.goals ?? []).map((g: { id: string; categoryId: string; category: { name: string; type: "EXPENSE" | "INCOME" }; goalAmount: number }) => ({
+                const goals = (created.data.goals ?? []).map((g: { id: string; categoryId: string; category: { name: string; type: "EXPENSE" | "INCOME" }; goalAmount: number }) => ({
                     id: g.id,
                     categoryId: g.categoryId,
                     categoryName: g.category.name,
