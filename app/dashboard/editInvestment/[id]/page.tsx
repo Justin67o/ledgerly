@@ -27,7 +27,7 @@ export default function EditInvestment() {
 
     const handlePurchasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        if (!/^-?\d*\.?\d*$/.test(value)) return;
+        if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
         setPurchasePrice(value);
     };
 
