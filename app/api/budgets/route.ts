@@ -139,8 +139,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ message: "Budget created successfully", data: budgetWithGoals }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      return NextResponse.json({ message: `Error creating budget, ${error.message}` }, { status: 500 });
-    }
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ message: `Error creating budget, ${message}`, data: null }, { status: 500 });
   }
 }

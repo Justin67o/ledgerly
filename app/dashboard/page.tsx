@@ -9,6 +9,13 @@ import SimpleAreaChart from "@/src/components/areaChart";
 
 const TIMEFRAMES = ["1D", "1W", "1M", "3M", "1Y", "All"];
 
+const TYPE_STYLES: Record<string, { bg: string; color: string }> = {
+  CREDIT:     { bg: "#ff4d4d20", color: "#ff6b6b" },
+  INVESTMENT: { bg: "var(--accent-dim)", color: "var(--accent)" },
+  CHECKING:   { bg: "var(--bg-hover)", color: "var(--text-secondary)" },
+  SAVINGS:    { bg: "#3b82f620", color: "#60a5fa" },
+};
+
 const days = {
   "1W": 7,
   "1M": 30,
@@ -238,7 +245,9 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {accounts.map((account) => (
+            {accounts.map((account) => {
+              const typeStyle = TYPE_STYLES[account.type] ?? { bg: "var(--bg-hover)", color: "var(--text-secondary)" };
+              return (
               <div
                 key={account.id}
                 className="p-4 rounded-2xl cursor-pointer transition-all duration-150"
@@ -251,7 +260,7 @@ export default function Dashboard() {
                   <span className="text-sm font-medium">{account.name}</span>
                   <span
                     className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}
+                    style={{ backgroundColor: typeStyle.bg, color: typeStyle.color }}
                   >
                     {account.type}
                   </span>
@@ -262,7 +271,8 @@ export default function Dashboard() {
                     : parseFloat(account.balance.toString()))}
                 </p>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </main>
