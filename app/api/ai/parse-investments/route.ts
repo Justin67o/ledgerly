@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { createNetWorthSnapshot } from "@/lib/networthSnapshot";
+import { createInvestmentAccountSnapshot } from "@/lib/investmentAccountSnapshot";
+import { createInvestmentSnapshot } from "@/lib/investmentSnapshot";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
@@ -65,6 +67,8 @@ export async function POST(request: Request) {
         });
 
         createNetWorthSnapshot(user.id);
+        createInvestmentAccountSnapshot(account.id);
+        createInvestmentSnapshot(user.id);
         return NextResponse.json({ message: 'Investment created successfully', data: investment }, { status: 201 });
     } catch (error) {
         if (error instanceof Error) {
