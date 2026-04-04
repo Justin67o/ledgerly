@@ -21,13 +21,13 @@ export default function EditInvestment() {
 
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
+        if (!/^-?\d*\.?\d*$/.test(value)) return;
         setQuantity(value);
     };
 
     const handlePurchasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
-        if (!/^-?\d*\.?\d{0,2}$/.test(value)) return;
+        if (!/^-?\d*\.?\d*$/.test(value)) return;
         setPurchasePrice(value);
     };
 
