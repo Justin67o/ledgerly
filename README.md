@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ledgerly
+A personal finance platform inspired by Wealthsimple, built to manage budgets, track investments, and visualize net worth with AI-powered tools.
 
-## Getting Started
+🔗 **Live Demo:** [https://ledgerly-wine.vercel.app/](https://ledgerly-wine.vercel.app/)  
 
-First, run the development server:
+---
 
+## 🚀 Key Features
+- **AI-driven transaction input:** Add expenses and income using natural language via Google Gemini API.  
+- **Portfolio tracking:** Monitor stocks, ETFs, and cryptocurrencies with live prices through Yahoo Finance API.  
+- **Net worth visualization:** Interactive graphs across multiple timeframes (1D, 1W, 1M, 3M, 1Y).  
+- **Budget goals:** Track spending per category, set goals, and get detailed breakdowns.  
+- **Secure authentication:** NextAuth.js with JWT sessions and bcrypt hashing for user security.  
+
+---
+
+## 🛠 Tech Stack
+- **Frontend:** Next.js 14 App Router, React 18, TypeScript, Tailwind CSS v4  
+- **Backend:** Next.js API Routes, Prisma ORM, PostgreSQL (Neon)  
+- **Authentication:** NextAuth.js, bcrypt, JWT  
+- **APIs & Integrations:** Google Gemini, Yahoo Finance  
+
+---
+
+## 💻 Screenshots
+<div align="center">
+  <img src="./screenshots/dashboard.jpg" width="300" alt="Dashboard">
+  <img src="./screenshots/budget.jpg" width="300" alt="Budget Goals">
+</div>
+
+---
+
+## ⚙️ Running Locally
 ```bash
+# Clone the repo
+git clone <repo-url>
+cd ledgerly
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Fill in your API keys
+
+# Run database migrations
+npx prisma migrate dev
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
