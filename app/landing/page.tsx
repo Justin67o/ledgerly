@@ -289,15 +289,7 @@ export default function Landing() {
 
         <div className="divider" />
 
-        {/* ── Stats ───────────────────────────────────────── */}
-        <section ref={statsRef} style={{ maxWidth: 1100, margin: "0 auto", padding: "5rem 1.5rem" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "3rem" }}>
-            <StatCard value={12400} suffix="+" label="Transactions tracked" start={statsVisible} />
-            <StatCard value={98}    suffix="%" label="Data accuracy"         start={statsVisible} />
-            <StatCard value={5}     suffix=" min" label="Average setup time" start={statsVisible} />
-          </div>
-        </section>
-
+        
         <div className="divider" />
 
         {/* ── Features ────────────────────────────────────── */}
