@@ -70,10 +70,15 @@ export async function POST(request: Request) {
             where: { name: parsed.categoryName, userId: user.id }
         }) : null;
 
+
+        const rawAmount = Math.abs(parseFloat(parsed.amount));
+        const normalizedAmount = parsed.type === "INCOME" ? rawAmount : -rawAmount;
+
+
         const transaction = await prisma.transaction.create({
             data: {
                 description: parsed.description,
-                amount: parsed.amount,
+                amount: normalizedAmount,
                 date: parsed.date,
                 type: parsed.type ?? "EXPENSE",
                 accountId: account.id,
@@ -81,8 +86,7 @@ export async function POST(request: Request) {
             }
         })
 
-        const rawAmount = Math.abs(parseFloat(parsed.amount));
-        const normalizedAmount = parsed.type === "INCOME" ? rawAmount : -rawAmount;
+
 
         await prisma.account.update({
             where: { id: account.id },
