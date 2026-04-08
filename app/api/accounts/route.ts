@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { Prisma } from "@/generated/prisma/client";
 import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
+import { localDateString } from '@/lib/dateUtils';
 
 export async function GET() {
     const user = await requireAuthentication();
@@ -38,13 +39,13 @@ export async function POST(request: Request) {
             data: {
                 name: data.name,
                 type: data.type,
-                dateCreated: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
+                dateCreated: data.date || localDateString(request.headers.get("X-Timezone") ?? undefined),
                 balance: new Prisma.Decimal(data.balance || 0),
                 userId: user.id
             }
         })
 
-        createNetWorthSnapshot(user.id);
+        createNetWorthSnapshot(user.id, localDateString(request.headers.get("X-Timezone") ?? undefined));
         return NextResponse.json({ message: 'Account created successfully', data: account }, { status: 201 });
     } catch (error) {
         if (error instanceof Error) {

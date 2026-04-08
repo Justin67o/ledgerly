@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     });
 
     const formatted = userSnapshots.map(s => ({
-      date: s.createdAt.toISOString().split("T")[0],
+      date: s.date,
       amount: parseFloat(s.amount.toString()),
       createdAt: s.createdAt,
     }));

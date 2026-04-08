@@ -5,6 +5,7 @@ import { requireAuthentication } from "@/lib/requireAuthentication";
 import { Prisma } from "@/generated/prisma/client";
 import { request } from "https";
 import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
+import { localDateString } from '@/lib/dateUtils';
 
 //TODO: add authentication and authorization to ensure users can only access their own accounts
 // get all existing accounts for user
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
         data: {
           amount: new Prisma.Decimal(normalizedAmount),
           description: data.name,
-          date: data.date || new Date().toISOString().split("T")[0], // fallback to current date if not provided
+          date: data.date || localDateString(request.headers.get("X-Timezone") ?? undefined),
           createdAt: data.createdAt ?? new Date(),
           type: data.type ?? (category ? category.type : "EXPENSE"),
           accountId: account.id,
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     console.log("Created transaction:", transaction);
 
 
-    createNetWorthSnapshot(user.id);
+    createNetWorthSnapshot(user.id, localDateString(request.headers.get("X-Timezone") ?? undefined));
     return NextResponse.json({ message: 'Transaction created successfully', data: transaction }, { status: 201 });
   } catch (error) {
     if (error instanceof Error) {

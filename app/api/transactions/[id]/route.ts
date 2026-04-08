@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
+import { localDateString } from '@/lib/dateUtils';
 
 // PUT: Update a specific transaction
 export async function PUT(
@@ -53,7 +54,7 @@ export async function PUT(
       return txUpdated;
     });
 
-    await createNetWorthSnapshot(user.id);
+    await createNetWorthSnapshot(user.id, localDateString(request.headers.get("X-Timezone") ?? undefined));
 
     return NextResponse.json({ message: 'Transaction updated successfully', data: updatedTransaction }, { status: 200 });
   } catch (error) {
@@ -85,7 +86,7 @@ export async function DELETE(
       prisma.transaction.delete({ where: { id } })
     ]);
 
-    await createNetWorthSnapshot(user.id);
+    await createNetWorthSnapshot(user.id, localDateString(req.headers.get("X-Timezone") ?? undefined));
 
     return NextResponse.json({ message: 'Transaction deleted successfully' }, { status: 200 });
   } catch (error) {

@@ -7,6 +7,7 @@ import { request } from "https";
 import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
 import { createInvestmentAccountSnapshot } from '@/lib/investmentAccountSnapshot';
 import { createInvestmentSnapshot } from '@/lib/investmentSnapshot';
+import { localDateString } from '@/lib/dateUtils';
 
 //TODO: add authentication and authorization to ensure users can only access their own accounts
 // get all existing accounts for user
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
           quantity: new Prisma.Decimal(addedQty),
           purchasePrice: new Prisma.Decimal(addedPrice),
           name: data.name,
-          date: data.date || new Date().toISOString().split("T")[0],
+          date: data.date || localDateString(request.headers.get("X-Timezone") ?? undefined),
           createdAt: data.createdAt ?? new Date(),
           accountId: account.id,
         },
@@ -92,9 +93,10 @@ export async function POST(request: Request) {
       data: { balance: { increment: addedQty * addedPrice } },
     });
 
-    createNetWorthSnapshot(user.id);
-    createInvestmentAccountSnapshot(account.id);
-    createInvestmentSnapshot(user.id);
+    const today = localDateString(request.headers.get("X-Timezone") ?? undefined);
+    createNetWorthSnapshot(user.id, today);
+    createInvestmentAccountSnapshot(account.id, today);
+    createInvestmentSnapshot(user.id, today);
 
     console.log("Created/updated investment:", investment);
     return NextResponse.json({ message: 'Investment created successfully', data: investment }, { status: 201 });

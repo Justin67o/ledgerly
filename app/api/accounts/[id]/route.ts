@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth";
 import { requireAuthentication } from '@/lib/requireAuthentication';
 import { createNetWorthSnapshot } from '@/lib/networthSnapshot';
+import { localDateString } from '@/lib/dateUtils';
 
 // update one specific existing account by id
 
@@ -32,7 +33,7 @@ export async function PUT(request: Request,
         });
         console.log("Updated account:", updatedAccount);
 
-        createNetWorthSnapshot(user.id);
+        createNetWorthSnapshot(user.id, localDateString(request.headers.get("X-Timezone") ?? undefined));
         return NextResponse.json({ message: 'Account updated successfully', data: updatedAccount }, { status: 200 });
     } catch (error) {
         console.log("Error updating account:", error);
@@ -60,7 +61,7 @@ export async function DELETE(
         await prisma.account.delete({
             where: { id: id },
         });
-        createNetWorthSnapshot(user.id);
+        createNetWorthSnapshot(user.id, localDateString(req.headers.get("X-Timezone") ?? undefined));
         return NextResponse.json({ message: 'Account deleted successfully' }, { status: 200 });
     } catch (error) {
         console.log("Error deleting account:", error);

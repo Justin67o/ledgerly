@@ -45,7 +45,7 @@ export default function AddTransaction() {
         console.log(rawAmount, signedAmount);
         const transactionData = manuallyFilled
             ? { accountId, categoryId, date, amount: signedAmount, name, type: transactionType }
-            : { aiInput };
+            : { aiInput, today: new Date().toLocaleDateString('en-CA') };
 
         const route = manuallyFilled ? "/api/transactions" : "/api/ai/parse-transactions";
         try {
