@@ -119,11 +119,8 @@ export default function Budgets() {
 
     const incomeGoals = goals.filter(g => g.categoryType === "EXPENSE");
     const pieData: (PieSlice & { fill: string })[] = incomeGoals
-        .filter(g => g.spent > 0)
-        .map((g) => {
-            const colorIdx = incomeGoals.indexOf(g);
-            return { name: g.categoryName, value: g.spent, fill: PIE_COLORS[colorIdx % PIE_COLORS.length] };
-        });
+        .filter(g => g.spent > 0 && g.goalAmount > 0)
+        .map((g, i) => ({ name: g.categoryName, value: g.spent, fill: PIE_COLORS[i % PIE_COLORS.length] }));
     const overallPct = totalGoal > 0 ? Math.min((totalSpent / totalGoal) * 100, 100) : 0;
     const overallOver = totalSpent > totalGoal;
     const overallColor = overallOver ? "var(--negative)" : "var(--accent)";
@@ -539,14 +536,14 @@ export default function Budgets() {
                         <div className="flex flex-col items-center w-64 pt-10 shrink-0">
                             <SimplePieChart isAnimationActive={false} data={pieData} />
                             <div className="mt-6 w-full space-y-2">
-                                {incomeGoals.map(({ id, categoryName }, i) => (
-                                    <div key={id} className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
-                                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>{categoryName}</span>
+                                {pieData.map(({ name, fill }, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: fill }} />
+                                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>{name}</span>
                                     </div>
                                 ))}
-                                {incomeGoals.length === 0 && (
-                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>No income categories yet</p>
+                                {pieData.length === 0 && (
+                                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>No spending recorded yet</p>
                                 )}
                             </div>
                         </div>

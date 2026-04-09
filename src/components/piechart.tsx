@@ -7,6 +7,28 @@ export const PIE_COLORS = [
 
 export type PieSlice = { name: string; value: number };
 
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: { name: string; value: number; payload: { fill: string } }[] }) {
+  if (!active || !payload || payload.length === 0) return null;
+  const { name, value, payload: { fill } } = payload[0];
+  return (
+    <div style={{
+      backgroundColor: 'var(--bg-card)',
+      border: '1px solid var(--border)',
+      borderRadius: '10px',
+      padding: '8px 12px',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: fill, flexShrink: 0 }} />
+        <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{name}</span>
+      </div>
+      <div style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, marginTop: '2px', paddingLeft: '16px' }}>
+        {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD', minimumFractionDigits: 0 }).format(value)}
+      </div>
+    </div>
+  );
+}
+
 export default function SimplePieChart({
   isAnimationActive,
   defaultIndex,
@@ -19,7 +41,7 @@ export default function SimplePieChart({
   const isEmpty = !data || data.length === 0;
   const chartData = isEmpty
     ? [{ name: 'No data', value: 1, fill: 'var(--border)' }]
-    : data.map((d, i) => ({ ...d, fill: PIE_COLORS[i % PIE_COLORS.length] }));
+    : data.map((d, i) => ({ fill: PIE_COLORS[i % PIE_COLORS.length], ...d }));
 
   return (
     <PieChart
@@ -34,7 +56,7 @@ export default function SimplePieChart({
         outerRadius="80%"
         isAnimationActive={isAnimationActive}
       />
-      {!isEmpty && <Tooltip defaultIndex={defaultIndex} />}
+      {!isEmpty && <Tooltip defaultIndex={defaultIndex} content={<CustomTooltip />} />}
     </PieChart>
   );
 }
