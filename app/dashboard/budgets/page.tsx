@@ -113,8 +113,9 @@ export default function Budgets() {
     }, [selectedMonth]);
 
     const goals = budget?.goals ?? [];
-    const totalSpent = goals.reduce((s, g) => s + (g.categoryType === "EXPENSE" ? g.spent : 0), 0);
-    const totalGoal = goals.reduce((s, g) => s + (g.categoryType === "EXPENSE" ? g.goalAmount : 0), 0);
+    const goalsWithTarget = goals.filter(g => g.goalAmount > 0);
+    const totalSpent = goalsWithTarget.reduce((s, g) => s + (g.categoryType === "EXPENSE" ? g.spent : 0), 0);
+    const totalGoal = goalsWithTarget.reduce((s, g) => s + (g.categoryType === "EXPENSE" ? g.goalAmount : 0), 0);
 
     const incomeGoals = goals.filter(g => g.categoryType === "EXPENSE");
     const pieData: (PieSlice & { fill: string })[] = incomeGoals

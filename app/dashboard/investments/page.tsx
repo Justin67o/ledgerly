@@ -36,6 +36,13 @@ export default function Investments() {
     const [hoveredData, setHoveredData] = useState<{ date: string; amount: number } | null>(null);
     const router = useRouter();
 
+    const accountCurrentValue = investments.reduce((map, inv) => {
+        const qty = parseFloat(inv.quantity.toString());
+        const price = prices[inv.name] ?? parseFloat(inv.purchasePrice.toString());
+        map[inv.accountId] = (map[inv.accountId] ?? 0) + qty * price;
+        return map;
+    }, {} as Record<string, number>);
+
     const totalCurrentValue = investments.reduce((sum, inv) => {
         const qty = parseFloat(inv.quantity.toString());
         const price = prices[inv.name] ?? parseFloat(inv.purchasePrice.toString());
@@ -227,7 +234,7 @@ export default function Investments() {
                                             {account.type}
                                         </span>
                                     </div>
-                                    <p className="text-xl font-semibold">{formatCurrency(parseFloat(account.balance.toString()))}</p>
+                                    <p className="text-xl font-semibold">{formatCurrency(accountCurrentValue[account.id] ?? 0)}</p>
                                 </div>
                             ))}
                     </div>
