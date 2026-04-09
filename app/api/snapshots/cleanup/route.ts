@@ -40,5 +40,5 @@ export async function POST(request: Request) {
         });
     }
 
-    return NextResponse.json({ message: "Cleanup complete" });
+    return NextResponse.json({ message: "Cleanup complete", debug: { today, total: snapshots.length, filtered: filteredSnapshots.length, toDelete: toDelete.length, dates: filteredSnapshots.map(s => s.date) } });
 }
