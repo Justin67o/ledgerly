@@ -56,9 +56,8 @@ export default function Dashboard() {
     const fetchdata = async () => {
 
       // clean up old snapshots so only the latest one for each date remains, this keeps the graph data clean and prevents it from getting bloated with multiple snapshots per day
-      apiFetch("/api/snapshots/cleanup", { method: "POST" });
-
       try {
+        await apiFetch("/api/snapshots/cleanup", { method: "POST" });
         const [fetchedAccounts, fetchedSnapshots] = await Promise.all([
           apiFetch("/api/accounts"),
           apiFetch("/api/snapshots"),
@@ -107,17 +106,12 @@ export default function Dashboard() {
 
 
   const filteredSnapshots = snapshots.filter(s => {
+    const now = new Date().toLocaleDateString("en-CA");
     if (timeframe === "All") return true;
-    if (timeframe === "1D") {
-      const now = new Date().toISOString().split("T")[0];
-      console.log(new Date(s.date).toDateString(), new Date().toDateString());
-      return s.date === now;
-    }
-    const snapshotDate = new Date(s.date);
-    const now = new Date().toISOString().split("T")[0];
+    if (timeframe === "1D") return s.date === now;
     const latest = new Date();
     latest.setDate(latest.getDate() - days[timeframe as keyof typeof days]);
-    return s.date >= latest.toISOString().split("T")[0] && s.date <= now;
+    return s.date >= latest.toLocaleDateString("en-CA") && s.date <= now;
   });
 
   const latestPerDate: { [date: string]: { date: string; amount: number; createdAt: Date } } = {};

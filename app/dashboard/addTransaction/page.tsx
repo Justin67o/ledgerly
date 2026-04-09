@@ -14,7 +14,7 @@ export default function AddTransaction() {
     const [accountId, setAccountId] = useState("");
     const [categoryId, setCategoryId] = useState("");
     const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
-    const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+    const [date, setDate] = useState(() => new Date().toLocaleDateString("en-CA"));
     const [amount, setAmount] = useState("");
     const [name, setName] = useState("");
 

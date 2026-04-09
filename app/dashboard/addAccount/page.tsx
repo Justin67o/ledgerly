@@ -10,7 +10,7 @@ export default function AddAccount() {
     const router = useRouter();
 
     const [type, setType] = useState("");
-    const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+    const [date, setDate] = useState(() => new Date().toLocaleDateString("en-CA"));
     const [balance, setBalance] = useState("");
     const [name, setName] = useState("");
 

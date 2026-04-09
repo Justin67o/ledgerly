@@ -14,7 +14,7 @@ export default function EditInvestment() {
     const [isLoading, setIsLoading] = useState(true);
 
     const [accountId, setAccountId] = useState("");
-    const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
+    const [date, setDate] = useState(() => new Date().toLocaleDateString("en-CA"));
     const [purchasePrice, setPurchasePrice] = useState("");
     const [quantity, setQuantity] = useState("");
     const [name, setName] = useState("");

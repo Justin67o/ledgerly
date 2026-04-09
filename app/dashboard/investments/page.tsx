@@ -65,7 +65,7 @@ export default function Investments() {
     useEffect(() => {
         const fetchdata = async () => {
             try {
-                apiFetch("/api/investment-snapshots/cleanup", { method: "POST" });
+                await apiFetch("/api/investment-snapshots/cleanup", { method: "POST" });
                 const [accs, invs, snapshotRes] = await Promise.all([
                     apiFetch("/api/accounts"),
                     apiFetch("/api/investments"),
@@ -102,15 +102,12 @@ export default function Investments() {
     }, []);
 
     const filteredSnapshots = snapshots.filter((s) => {
+        const now = new Date().toLocaleDateString("en-CA");
         if (timeframe === "All") return true;
-        if (timeframe === "1D") {
-            const now = new Date().toISOString().split("T")[0];
-            return s.date === now;
-        }
-        const now = new Date().toISOString().split("T")[0];
+        if (timeframe === "1D") return s.date === now;
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - days[timeframe as keyof typeof days]);
-        return s.date >= cutoff.toISOString().split("T")[0] && s.date <= now;
+        return s.date >= cutoff.toLocaleDateString("en-CA") && s.date <= now;
     });
 
     const latestPerDate: { [date: string]: { date: string; amount: number; createdAt: Date } } = {};

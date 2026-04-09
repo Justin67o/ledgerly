@@ -110,7 +110,7 @@ export default function AccountPage() {
                     }
                     setPrices(priceMap);
 
-                    apiFetch(`/api/investment-account-snapshots/${id}/cleanup`, { method: "POST" });
+                    await apiFetch(`/api/investment-account-snapshots/${id}/cleanup`, { method: "POST" });
                     const snapshotRes = await apiFetch(`/api/investment-account-snapshots/${id}`);
                     setSnapshots(snapshotRes.data);
                 }
@@ -124,15 +124,12 @@ export default function AccountPage() {
     }, []);
 
     const filteredSnapshots = snapshots.filter((s) => {
+        const now = new Date().toLocaleDateString("en-CA");
         if (timeframe === "All") return true;
-        if (timeframe === "1D") {
-            const now = new Date().toISOString().split("T")[0];
-            return s.date === now;
-        }
-        const now = new Date().toISOString().split("T")[0];
+        if (timeframe === "1D") return s.date === now;
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - days[timeframe as keyof typeof days]);
-        return s.date >= cutoff.toISOString().split("T")[0] && s.date <= now;
+        return s.date >= cutoff.toLocaleDateString("en-CA") && s.date <= now;
     });
 
     const latestPerDate: { [date: string]: { date: string; amount: number; createdAt: Date } } = {};
