@@ -6,6 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { createNetWorthSnapshot } from "@/lib/networthSnapshot";
 import { createInvestmentAccountSnapshot } from "@/lib/investmentAccountSnapshot";
 import { createInvestmentSnapshot } from "@/lib/investmentSnapshot";
+import { localDateString } from "@/lib/dateUtils";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
         });
         const accountsArray = accounts.map(a => a.name).join(", ");
 
-        const today = new Date().toISOString().split("T")[0];
+        const today = data.today ?? localDateString(request.headers.get("X-Timezone") ?? undefined);
         console.log("Sending to gemini");
         const aiResult = await model.generateContent(
             `You are an investment parser. Parse the following natural language input into a JSON object.
@@ -87,9 +88,9 @@ export async function POST(request: Request) {
             data: { balance: { increment: addedQty * addedPrice } }
         });
 
-        createNetWorthSnapshot(user.id);
-        createInvestmentAccountSnapshot(account.id);
-        createInvestmentSnapshot(user.id);
+        createNetWorthSnapshot(user.id, today);
+        createInvestmentAccountSnapshot(account.id, today);
+        createInvestmentSnapshot(user.id, today);
         return NextResponse.json({ message: 'Investment created successfully', data: investment }, { status: 201 });
     } catch (error) {
         if (error instanceof Error) {

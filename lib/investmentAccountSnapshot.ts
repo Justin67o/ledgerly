@@ -1,10 +1,11 @@
 import { prisma } from "./prisma";
 import { Prisma } from "@/generated/prisma/client";
 import YahooFinance from "yahoo-finance2";
+import { localDateString } from "./dateUtils";
 
 const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
-export async function createInvestmentAccountSnapshot(accountId: string) {
+export async function createInvestmentAccountSnapshot(accountId: string, date?: string) {
   const holdings = await prisma.investment.findMany({ where: { accountId } });
 
   let total = 0;
@@ -19,7 +20,7 @@ export async function createInvestmentAccountSnapshot(accountId: string) {
     }
   }
 
-  const date = new Date().toISOString().split("T")[0];
+  date ??= localDateString();
   await prisma.investmentAccountSnapshot.create({
     data: { accountId, amount: new Prisma.Decimal(total), date },
   });

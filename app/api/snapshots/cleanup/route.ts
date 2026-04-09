@@ -1,6 +1,7 @@
 import { requireAuthentication } from "@/lib/requireAuthentication";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { localDateString } from "@/lib/dateUtils";
 
 export async function POST(request: Request) {
     const user = await requireAuthentication();
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
 
     // Keep only the latest snapshot per date
 
-    const today = new Date().toISOString().split("T")[0]
+    const today = localDateString(request.headers.get("X-Timezone") ?? undefined)
     const filteredSnapshots = snapshots.filter(s => s.date < today); // only consider snapshots before, ignore any future-dated snapshots that might exist for some reason
     // Use a Set to track dates already seen and an array to collect IDs of snapshots to delete
     const seen = new Set<string>();

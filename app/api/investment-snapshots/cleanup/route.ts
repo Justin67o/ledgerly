@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { requireAuthentication } from "@/lib/requireAuthentication";
+import { localDateString } from "@/lib/dateUtils";
 
 export async function POST(request: Request) {
   const user = await requireAuthentication();
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
     orderBy: { createdAt: "desc" },
   });
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = localDateString(request.headers.get("X-Timezone") ?? undefined);
   const pastSnapshots = snapshots.filter((s) => s.date < today);
 
   const seen = new Set<string>();

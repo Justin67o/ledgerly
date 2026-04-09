@@ -3,6 +3,7 @@ import { requireAuthentication } from "@/lib/requireAuthentication";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createNetWorthSnapshot } from "@/lib/networthSnapshot";
+import { localDateString } from "@/lib/dateUtils";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || ""); // Make sure to set your GEMINI_API_KEY in the .env file
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
@@ -30,9 +31,9 @@ export async function POST(request: Request) {
         const categoriesArray = categories.map(category => category.name).join(", ");
 
         const aiInput = data.aiInput;
+        const today = data.today ?? localDateString(request.headers.get("X-Timezone") ?? undefined);
 
         console.log("Sending to gemini")
-        const today = new Date().toISOString().split("T")[0];
 
         const aiResult = await model.generateContent(
             `You are a transaction parser. Parse the following natural language input into a JSON object.
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
             }
         })
 
-        createNetWorthSnapshot(user.id);
+        createNetWorthSnapshot(user.id, today);
         return NextResponse.json({ message: 'Transaction created successfully', data: transaction }, { status: 201 });
     } catch (error) {
         if (error instanceof Error) {
