@@ -50,8 +50,8 @@ export default function Investments() {
     }, 0);
     const totalCostBasis = investments.reduce((sum, inv) =>
         sum + parseFloat(inv.quantity.toString()) * parseFloat(inv.purchasePrice.toString()), 0);
-    const overallGain = parseFloat((totalCurrentValue - totalCostBasis).toFixed(2));
-    const overallGainPct = totalCostBasis > 0 ? parseFloat(((overallGain / totalCostBasis) * 100).toFixed(2)) : 0;
+    const unrealizedGain = totalCurrentValue - totalCostBasis;
+    const unrealizedGainPct = totalCostBasis > 0 ? (unrealizedGain / totalCostBasis) * 100 : 0;
 
     const handleDeleteInvestment = async (investmentId: string) => {
         try {
@@ -114,6 +114,8 @@ export default function Investments() {
     filteredSnapshots.forEach((s) => { latestPerDate[s.date] = s; });
     const finalSnapshots = Object.values(latestPerDate);
 
+
+
     if (isLoading) {
         return (
             <div className="min-h-screen pb-24 md:pb-0" style={{ backgroundColor: "var(--bg-primary)", color: "var(--text-primary)" }}>
@@ -142,16 +144,15 @@ export default function Investments() {
                     <div className="flex-1">
                         <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>Total Investments</p>
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                            {formatCurrency(totalCurrentValue)}
+                            {hoveredData ? formatCurrency(hoveredData.amount) : formatCurrency(totalCurrentValue)}
                         </h1>
-                        {investments.length > 0 && (() => {
-                            const isPositive = overallGain >= 0;
-                            return (
-                                <p className="text-sm mt-1" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
-                                    {isPositive ? "+" : "−"}{formatCurrency(Math.abs(overallGain))} ({isPositive ? "+" : "-"}{Math.abs(overallGainPct).toFixed(2)}%) total return
-                                </p>
-                            );
-                        })()}
+                        <p className="text-sm mt-1" style={{ color: hoveredData ? "var(--text-secondary)" : unrealizedGain >= 0 ? "var(--positive)" : "var(--negative)" }}>
+                            {hoveredData
+                                ? hoveredData.date
+                                : investments.length > 0
+                                    ? `${unrealizedGain >= 0 ? "+" : ""}${formatCurrency(unrealizedGain)} (${unrealizedGain >= 0 ? "+" : ""}${unrealizedGainPct.toFixed(2)}%) total return`
+                                    : null}
+                        </p>
 
                         {/* Portfolio Chart */}
                         <div className="mb-4 mt-4">

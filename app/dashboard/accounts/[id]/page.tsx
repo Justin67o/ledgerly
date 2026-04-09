@@ -164,15 +164,17 @@ export default function AccountPage() {
                             {account.name}
                         </p>
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                            {formatCurrency(accountBalance)}
+                            {hoveredData ? formatCurrency(hoveredData.amount) : formatCurrency(accountBalance)}
                         </h1>
                         {account.type === "INVESTMENT" && liveTotal !== null && (() => {
                             const overallGain = parseFloat((liveTotal - costBasisTotal).toFixed(2));
                             const overallGainPct = costBasisTotal > 0 ? parseFloat(((overallGain / costBasisTotal) * 100).toFixed(2)) : 0;
                             const isPositive = overallGain >= 0;
                             return (
-                                <p className="text-sm mt-1" style={{ color: isPositive ? "var(--positive)" : "var(--negative)" }}>
-                                    {isPositive ? "+" : "−"}{formatCurrency(Math.abs(overallGain))} ({isPositive ? "+" : "-"}{Math.abs(overallGainPct).toFixed(2)}%) total return
+                                <p className="text-sm mt-1" style={{ color: hoveredData ? "var(--text-secondary)" : isPositive ? "var(--positive)" : "var(--negative)" }}>
+                                    {hoveredData
+                                        ? hoveredData.date
+                                        : `${isPositive ? "+" : "−"}${formatCurrency(Math.abs(overallGain))} (${isPositive ? "+" : "-"}${Math.abs(overallGainPct).toFixed(2)}%) total return`}
                                 </p>
                             );
                         })()}

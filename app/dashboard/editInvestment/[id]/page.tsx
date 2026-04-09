@@ -148,7 +148,7 @@ export default function EditInvestment() {
                         />
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-4">
                         <label htmlFor="quantity" className="field-label">Quantity</label>
                         <input
                             id="quantity"
