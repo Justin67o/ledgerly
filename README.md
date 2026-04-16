@@ -6,7 +6,7 @@ Ledgerly helps you track net worth, manage transactions, monitor budgets, and fo
 
 [Live Demo](https://ledgerly-wine.vercel.app) · [GitHub](https://github.com/justinchen/ledgerly)
 
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](screenshots/dashboard.jpg)
 
 ---
 
