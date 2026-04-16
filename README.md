@@ -37,14 +37,14 @@ Ledgerly helps you track net worth, manage transactions, monitor budgets, and fo
 
 Net worth is not computed on every page load. Instead a snapshot of the user's total net worth is recorded to the database every time any account balance changes. The graph renders from these snapshots, making historical data fast to query and accurate to the moment of each change.
 
-![Net Worth Graph](screenshots/dashboard.png)
+![Net Worth Graph](screenshots/dashboard.jpg)
 
 ---
 
 ## Screenshots
 
 
-![Budget](screenshots/budget.png)
+![Budget](screenshots/budget.jpg)
 
 ---
 
