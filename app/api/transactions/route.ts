@@ -25,6 +25,7 @@ export async function GET(request: Request) {
         account: { userId: user.id }
       },
       include: { account: true, category: true },
+      orderBy: { date: "desc" },
     });
     return NextResponse.json({ message: 'Transactions retrieved successfully', data: userTransactions }, { status: 200 });
   } catch (error) {
