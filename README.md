@@ -4,7 +4,7 @@
 
 Ledgerly helps you track net worth, manage transactions, monitor budgets, and follow investment portfolios in real time — with natural language AI input powered by Google Gemini.
 
-[Live Demo](https://ledgerly-wine.vercel.app) · [GitHub](https://github.com/justinchen/ledgerly)
+[Live Demo](https://ledgerly-wine.vercel.app) · [GitHub](https://github.com/Justin67o/ledgerly)
 
 ![Dashboard](screenshots/dashboard.jpg)
 
